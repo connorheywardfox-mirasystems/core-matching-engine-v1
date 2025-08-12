@@ -8,15 +8,28 @@ interface SidebarProps {
   activeRole: string;
   demoUser: DemoUser;
   onDemoUserChange: (user: DemoUser) => void;
+  onActiveRoleChange: (role: string) => void;
   onCreatePitch: () => void;
   onSaveMemory: () => void;
   onImportCandidates: () => void;
 }
 
+const mockRoles = [
+  'Senior Associate — London',
+  'Software Engineer — San Francisco',
+  'Product Manager — New York',
+  'Data Scientist — Berlin',
+  'UX Designer — Amsterdam',
+  'Marketing Director — Toronto',
+  'Sales Executive — Sydney',
+  'DevOps Engineer — Singapore'
+];
+
 export function Sidebar({
   activeRole,
   demoUser,
   onDemoUserChange,
+  onActiveRoleChange,
   onCreatePitch,
   onSaveMemory,
   onImportCandidates
@@ -41,10 +54,19 @@ export function Sidebar({
 
       {/* Active Role */}
       <div className="p-6 border-b border-border">
-        <h3 className="text-sm font-medium text-muted-foreground mb-2">Active role</h3>
-        <Card className="p-4 bg-gradient-to-r from-primary-muted to-background border-primary/20">
-          <p className="font-medium text-foreground">{activeRole}</p>
-        </Card>
+        <h3 className="text-sm font-medium text-muted-foreground mb-3">Active role</h3>
+        <Select value={activeRole} onValueChange={onActiveRoleChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {mockRoles.map((role) => (
+              <SelectItem key={role} value={role}>
+                {role}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Demo User Selector */}

@@ -19,7 +19,7 @@ export function SonderApp() {
   
   // State
   const [demoUser, setDemoUser] = useState<DemoUser>('recruiter_demo');
-  const [activeRole] = useState('Senior Associate — London');
+  const [activeRole, setActiveRole] = useState('Senior Associate — London');
   const [candidateText, setCandidateText] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -206,6 +206,7 @@ export function SonderApp() {
         activeRole={activeRole}
         demoUser={demoUser}
         onDemoUserChange={setDemoUser}
+        onActiveRoleChange={setActiveRole}
         onCreatePitch={handleCreatePitch}
         onSaveMemory={handleQuickSaveMemory}
         onImportCandidates={handleImportCandidates}
