@@ -10,14 +10,12 @@ import {
 } from '@/types';
 import { mockMatches, simulateNetworkDelay } from './mockData';
 
-// Webhook URLs - replace with real n8n endpoints when ready
-const WEBHOOK_BASE = 'https://<n8n-host>/webhook';
-
+// Webhook URLs - using your n8n endpoint
 const ENDPOINTS = {
-  matching: `${WEBHOOK_BASE}/matching`,
-  memory: `${WEBHOOK_BASE}/memory-ingest`,
-  sendIntro: `${WEBHOOK_BASE}/send-intro`,
-  matchDetail: `${WEBHOOK_BASE}/match-detail`
+  matching: 'https://connorheywardfox.app.n8n.cloud/webhook/match',
+  memory: `https://connorheywardfox.app.n8n.cloud/webhook/memory-ingest`,
+  sendIntro: `https://connorheywardfox.app.n8n.cloud/webhook/send-intro`,
+  matchDetail: `https://connorheywardfox.app.n8n.cloud/webhook/match-detail`
 };
 
 // Console logger for debugging

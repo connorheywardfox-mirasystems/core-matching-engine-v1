@@ -57,8 +57,7 @@ export function SonderApp() {
     try {
       const matchingRequest = {
         candidate_text: candidateText,
-        role_id: null,
-        user_id: demoUser
+        user_id: "recruiter_demo"
       };
 
       const results = await callMatchingWebhook(matchingRequest);
