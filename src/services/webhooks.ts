@@ -27,33 +27,22 @@ const logWebhookCall = (endpoint: string, payload: any, response: any, isMock = 
   console.groupEnd();
 };
 
-export async function callMatchingWebhook(request: MatchingRequest): Promise<MatchingResponse[]> {
-  try {
-    const response = await fetch(ENDPOINTS.matching, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
+export async function callMatchingWebhook(request: MatchingRequest): Promise<any> {
+  const response = await fetch(ENDPOINTS.matching, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const data = await response.json();
-    logWebhookCall(ENDPOINTS.matching, request, data);
-    return data;
-  } catch (error) {
-    console.warn('Webhook failed, using mock data:', error);
-    
-    // Simulate network delay for realistic demo
-    await simulateNetworkDelay();
-    
-    // Return top 5 mock matches
-    const mockResponse = mockMatches.slice(0, 5);
-    logWebhookCall(ENDPOINTS.matching, request, mockResponse, true);
-    
-    return mockResponse;
+  if (!response.ok) {
+    throw new Error(`Webhook failed with status ${response.status}`);
   }
+  
+  const data = await response.json();
+  logWebhookCall(ENDPOINTS.matching, request, data);
+  return data;
 }
 
 export async function callSaveMemoryWebhook(request: SaveMemoryRequest): Promise<SaveMemoryResponse> {

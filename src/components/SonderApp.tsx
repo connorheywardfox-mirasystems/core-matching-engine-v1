@@ -60,34 +60,24 @@ export function SonderApp() {
         user_id: "recruiter_demo"
       };
 
-      const results = await callMatchingWebhook(matchingRequest);
-      setMatches(results);
+      const webhookResponse = await callMatchingWebhook(matchingRequest);
       
-      // Add bot response
-      addMessage(
-        `Found ${results.length} matches — showing top results.`,
-        'bot'
-      );
+      // Display raw webhook response as bot message
+      addMessage(JSON.stringify(webhookResponse, null, 2), 'bot');
+      
+      // If response contains matches array, update matches state
+      if (Array.isArray(webhookResponse)) {
+        setMatches(webhookResponse);
+      } else if (webhookResponse.matches && Array.isArray(webhookResponse.matches)) {
+        setMatches(webhookResponse.matches);
+      }
 
       // Clear input
       setCandidateText('');
       
-      toast({
-        title: "Matches found",
-        description: `Found ${results.length} potential matches for the candidate.`,
-      });
     } catch (error) {
-      console.error('Error finding matches:', error);
-      addMessage(
-        'Sorry, I encountered an error while searching for matches. Please try again.',
-        'bot'
-      );
-      
-      toast({
-        title: "Error",
-        description: "Failed to find matches. Please try again.",
-        variant: "destructive",
-      });
+      console.error('Webhook error:', error);
+      addMessage(`Error: ${error.message}`, 'bot');
     } finally {
       setIsLoading(false);
     }
