@@ -62,16 +62,56 @@ export function SonderApp() {
 
       const webhookResponse = await callMatchingWebhook(matchingRequest);
       
+      // Normalize and clean webhook response data
+      const normalizeMatches = (rawResp: any) => {
+        const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
+        const rawMatches = resp.all_matches || [];
+
+        const parseScore = (s: any): number => {
+          if (s === null || s === undefined) return 0;
+          if (typeof s === 'number') {
+            if (s <= 1) return Math.round(s * 100); // 0.09 -> 9%
+            return Math.round(s); // 9 -> 9%
+          }
+          const str = String(s).trim();
+          if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
+          if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
+          const n = parseFloat(str);
+          if (!isNaN(n)) {
+            if (n <= 1) return Math.round(n * 100);
+            return Math.round(n);
+          }
+          return 0;
+        };
+
+        const normalized = rawMatches.map((m: any) => ({
+          role_id: m.role_id || m.id || m.role_title,
+          role_title: m.role_title || m.title || 'Untitled Role',
+          description: (m.description || m.role_description || '').substring(0, 400),
+          match_score_num: parseScore(m.match_score || m.score),
+          match_score: `${parseScore(m.match_score || m.score)}%`,
+          match_reason: m.match_reason || m.reason || '',
+          matched_at: m.matched_at || new Date().toISOString()
+        }));
+
+        // Dedupe by role_id keeping the highest score
+        const map = new Map();
+        normalized.forEach((item: any) => {
+          const key = item.role_id || item.role_title;
+          if (!map.has(key) || item.match_score_num > map.get(key).match_score_num) {
+            map.set(key, item);
+          }
+        });
+
+        return Array.from(map.values())
+          .sort((a: any, b: any) => b.match_score_num - a.match_score_num)
+          .slice(0, 10);
+      };
+      
       // Parse response and display friendly message
       if (webhookResponse.success && webhookResponse.all_matches) {
         const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
-        const topMatches = webhookResponse.all_matches
-          .sort((a: any, b: any) => {
-            const scoreA = parseInt(a.match_score.replace('%', ''));
-            const scoreB = parseInt(b.match_score.replace('%', ''));
-            return scoreB - scoreA;
-          })
-          .slice(0, 10);
+        const topMatches = normalizeMatches(webhookResponse);
         
         setMatches(topMatches);
         addMessage(
