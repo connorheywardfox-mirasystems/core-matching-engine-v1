@@ -63,9 +63,9 @@ export function MatchesPanel({
           </div>
         ) : matches.length > 0 ? (
           <div className="space-y-4">
-            {matches.map((match) => (
+            {matches.map((match, index) => (
               <MatchCard
-                key={match.role_id}
+                key={`${match.role_title}-${index}`}
                 match={match}
                 onView={onViewMatch}
                 onSendIntro={onSendIntro}

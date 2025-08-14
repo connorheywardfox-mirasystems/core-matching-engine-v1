@@ -62,14 +62,25 @@ export function SonderApp() {
 
       const webhookResponse = await callMatchingWebhook(matchingRequest);
       
-      // Display raw webhook response as bot message
-      addMessage(JSON.stringify(webhookResponse, null, 2), 'bot');
-      
-      // If response contains matches array, update matches state
-      if (Array.isArray(webhookResponse)) {
-        setMatches(webhookResponse);
-      } else if (webhookResponse.matches && Array.isArray(webhookResponse.matches)) {
-        setMatches(webhookResponse.matches);
+      // Parse response and display friendly message
+      if (webhookResponse.success && webhookResponse.all_matches) {
+        const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
+        const topMatches = webhookResponse.all_matches
+          .sort((a: any, b: any) => {
+            const scoreA = parseInt(a.match_score.replace('%', ''));
+            const scoreB = parseInt(b.match_score.replace('%', ''));
+            return scoreB - scoreA;
+          })
+          .slice(0, 10);
+        
+        setMatches(topMatches);
+        addMessage(
+          `I found ${totalMatches} matching roles for your CV! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+          'bot'
+        );
+      } else {
+        addMessage(webhookResponse.message || 'No matches found for your CV.', 'bot');
+        setMatches([]);
       }
 
       // Clear input
@@ -86,7 +97,7 @@ export function SonderApp() {
   // Handle view match
   const handleViewMatch = async (match: Match) => {
     try {
-      const detailRequest = { role_id: match.role_id };
+      const detailRequest = { role_id: match.role_title };
       const detailResponse = await callMatchDetailWebhook(detailRequest);
       
       // Update match with detailed info
@@ -105,7 +116,7 @@ export function SonderApp() {
     try {
       const introRequest = {
         candidate_id: `candidate-${Date.now()}`, // Generate candidate ID
-        role_id: match.role_id,
+        role_id: match.role_title,
         user_id: demoUser
       };
 

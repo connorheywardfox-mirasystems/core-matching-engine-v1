@@ -29,8 +29,8 @@ export function SaveMemoryModal({
   // Pre-fill form when match changes
   useEffect(() => {
     if (match && isOpen) {
-      setTitle(`Note: ${match.title}`);
-      setContent(`Match reason: ${match.reason}\n\nAdditional notes:`);
+      setTitle(`Note: ${match.role_title}`);
+      setContent(`Match reason: ${match.match_reason}\n\nAdditional notes:`);
       setTags("candidate,match,recruitment");
     }
   }, [match, isOpen]);

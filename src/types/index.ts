@@ -1,9 +1,9 @@
 export interface Match {
-  role_id: string;
-  title: string;
-  score: number;
-  reason: string;
-  long_description?: string;
+  role_title: string;
+  match_score: string;
+  description: string;
+  match_reason: string;
+  matched_at: string;
 }
 
 export interface MatchingRequest {

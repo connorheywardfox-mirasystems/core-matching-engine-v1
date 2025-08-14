@@ -12,64 +12,65 @@ interface MatchCardProps {
 }
 
 export function MatchCard({ match, onView, onSendIntro, onSave }: MatchCardProps) {
-  const percentage = Math.round(match.score * 100);
+  const scoreValue = parseInt(match.match_score.replace('%', ''));
   
+  const getScoreColor = (score: number) => {
+    if (score >= 70) return 'bg-green-100 text-green-800 border-green-200';
+    if (score >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-red-100 text-red-800 border-red-200';
+  };
+
   return (
-    <Card className="p-4 hover:shadow-md transition-all duration-200 border-l-4 border-l-primary">
-      <div className="space-y-3">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-medium text-muted-foreground">JD</span>
-              <Badge variant="secondary" className="text-xs px-2 py-0.5">
-                {percentage}%
-              </Badge>
-            </div>
-            <h3 className="font-medium text-foreground leading-tight">
-              {match.title}
-            </h3>
+    <Card className="p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <Badge className={`text-xs font-medium ${getScoreColor(scoreValue)}`}>
+              {match.match_score} match
+            </Badge>
           </div>
-          <div className="flex items-center">
-            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-          </div>
+          <h3 className="font-semibold text-foreground line-clamp-2 text-sm">
+            {match.role_title}
+          </h3>
         </div>
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
+          <Star className="h-4 w-4" />
+        </Button>
+      </div>
 
-        {/* Description */}
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {match.reason}
-        </p>
+      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+        {match.description}
+      </p>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => onView(match)}
-            className="flex-1"
-          >
-            <Eye className="w-3 h-3" />
-            View
-          </Button>
-          <Button 
-            variant="action" 
-            size="sm" 
-            onClick={() => onSendIntro(match)}
-            className="flex-1"
-          >
-            <Send className="w-3 h-3" />
-            Send intro
-          </Button>
-          <Button 
-            variant="action" 
-            size="sm" 
-            onClick={() => onSave(match)}
-            className="flex-1"
-          >
-            <Bookmark className="w-3 h-3" />
-            Save
-          </Button>
-        </div>
+      <p className="text-xs text-muted-foreground mb-4 line-clamp-1 italic">
+        Match reason: {match.match_reason}
+      </p>
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs"
+          onClick={() => onView(match)}
+        >
+          View Details
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs"
+          onClick={() => onSendIntro(match)}
+        >
+          Send intro
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1 text-xs"
+          onClick={() => onSave(match)}
+        >
+          Save
+        </Button>
       </div>
     </Card>
   );

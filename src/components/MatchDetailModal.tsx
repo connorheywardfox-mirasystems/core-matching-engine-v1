@@ -21,7 +21,7 @@ export function MatchDetailModal({
 }: MatchDetailModalProps) {
   if (!match) return null;
 
-  const percentage = Math.round(match.score * 100);
+  const scoreValue = parseInt(match.match_score.replace('%', ''));
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -34,13 +34,13 @@ export function MatchDetailModal({
                   <Building className="w-4 h-4 text-primary" />
                 </div>
                 <Badge variant="secondary" className="px-3 py-1">
-                  {percentage}% match
+                  {match.match_score} match
                 </Badge>
               </div>
               <DialogTitle className="text-xl leading-tight">
-                {match.title}
+                {match.role_title}
               </DialogTitle>
-              <p className="text-muted-foreground mt-1">{match.reason}</p>
+              <p className="text-muted-foreground mt-1">{match.match_reason}</p>
             </div>
           </div>
         </DialogHeader>
@@ -51,7 +51,7 @@ export function MatchDetailModal({
             <h3 className="font-medium text-foreground mb-3">Role Description</h3>
             <div className="bg-muted/50 rounded-lg p-4">
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {match.long_description || match.reason}
+                {match.description}
               </p>
             </div>
           </div>
@@ -61,7 +61,7 @@ export function MatchDetailModal({
             <h3 className="font-medium text-foreground mb-3">Why this matches</h3>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
               <p className="text-sm text-foreground leading-relaxed">
-                {match.reason}
+                {match.match_reason}
               </p>
             </div>
           </div>

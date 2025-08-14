@@ -127,7 +127,7 @@ export async function callMatchDetailWebhook(request: MatchDetailRequest): Promi
     console.warn('Match detail webhook failed, using mock response:', error);
     
     // Find match in mock data
-    const match = mockMatches.find(m => m.role_id === request.role_id);
+    const match = mockMatches.find(m => m.role_title === request.role_id);
     if (!match) throw new Error('Match not found');
     
     // Simulate network delay
@@ -135,7 +135,7 @@ export async function callMatchDetailWebhook(request: MatchDetailRequest): Promi
     
     const mockResponse: MatchDetailResponse = {
       ...match,
-      long_description: match.long_description || match.reason
+      long_description: match.description
     };
     
     logWebhookCall(ENDPOINTS.matchDetail, request, mockResponse, true);
