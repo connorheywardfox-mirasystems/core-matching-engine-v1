@@ -12,7 +12,7 @@ import {
   callSendIntroWebhook,
   callMatchDetailWebhook 
 } from "@/services/webhooks";
-import { testPayloads } from "@/services/mockData";
+
 
 export function SonderApp() {
   const { toast } = useToast();
@@ -194,10 +194,6 @@ export function SonderApp() {
     });
   };
 
-  // Test with sample payloads
-  const handleTestPayload = (payload: string) => {
-    setCandidateText(payload);
-  };
 
   return (
     <div className="h-screen flex bg-background">
@@ -248,21 +244,6 @@ export function SonderApp() {
         isLoading={isSaveMemoryLoading}
       />
 
-      {/* Test Payloads Overlay (for demo) */}
-      <div className="fixed bottom-4 right-4 bg-card border border-border rounded-lg p-3 shadow-lg max-w-xs">
-        <h4 className="text-sm font-medium mb-2">Test Payloads</h4>
-        <div className="space-y-1">
-          {testPayloads.map((payload, index) => (
-            <button
-              key={index}
-              onClick={() => handleTestPayload(payload.text)}
-              className="text-xs text-muted-foreground hover:text-foreground block w-full text-left p-1 rounded hover:bg-muted transition-colors"
-            >
-              {payload.name}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
