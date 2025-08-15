@@ -15,6 +15,7 @@ import {
 
 
 export function SonderApp() {
+  console.log('SonderApp component loaded');
   const { toast } = useToast();
   
   // State
