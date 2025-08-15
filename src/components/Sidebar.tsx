@@ -37,8 +37,8 @@ export function Sidebar({
   return (
     <div className="w-80 bg-background border-r border-border flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="h-24 p-6 border-b border-border flex items-center">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">S</span>
           </div>
@@ -46,10 +46,10 @@ export function Sidebar({
             <h1 className="font-semibold text-foreground">Sonder</h1>
             <p className="text-sm text-muted-foreground">Recruiter console</p>
           </div>
-          <Button variant="ghost" size="icon" className="ml-auto">
-            <Settings className="w-4 h-4" />
-          </Button>
         </div>
+        <Button variant="ghost" size="icon" className="ml-auto">
+          <Settings className="w-4 h-4" />
+        </Button>
       </div>
 
 

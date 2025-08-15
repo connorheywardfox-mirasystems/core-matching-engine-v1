@@ -22,6 +22,13 @@ export function ChatArea({
 }: ChatAreaProps) {
   return (
     <div className="flex-1 flex flex-col bg-background">
+      {/* Header */}
+      <div className="h-24 p-6 border-b border-border flex items-center">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Candidate Analysis</h2>
+          <p className="text-sm text-muted-foreground">AI-powered matching and insights</p>
+        </div>
+      </div>
 
       {/* Messages */}
       <div className="flex-1 p-6 space-y-4 overflow-y-auto">

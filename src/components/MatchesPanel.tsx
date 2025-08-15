@@ -43,14 +43,18 @@ export function MatchesPanel({
 }: MatchesPanelProps) {
   return (
     <div className="w-96 bg-background border-l border-border flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground mb-1">Top Matches</h2>
-        {matches.length > 0 && (
-          <p className="text-sm text-muted-foreground">
-            {matches.length} results
-          </p>
-        )}
+      <div className="h-24 p-6 border-b border-border flex items-center">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Top Matches</h2>
+          {matches.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {matches.length} results found
+            </p>
+          )}
+          {matches.length === 0 && (
+            <p className="text-sm text-muted-foreground">Role matching results</p>
+          )}
+        </div>
       </div>
 
       {/* Content */}
