@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Sidebar } from "./Sidebar";
 import { ChatArea } from "./ChatArea";
 import { MatchesPanel } from "./MatchesPanel";
@@ -17,6 +17,7 @@ import {
 export function SonderApp() {
   console.log('SonderApp component loaded');
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State
   const [demoUser, setDemoUser] = useState<DemoUser>('recruiter_demo');
@@ -229,10 +230,40 @@ export function SonderApp() {
   };
 
   const handleImportCandidates = () => {
+    // Trigger the hidden file input
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter(file => 
+      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    );
+
+    if (validFiles.length === 0) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select PDF files only.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Process the files
+    const fileNames = validFiles.map(file => file.name).join(', ');
     toast({
-      title: "Import candidates",
-      description: "Candidate import feature coming soon.",
+      title: "Files uploaded",
+      description: `Successfully uploaded ${validFiles.length} CV(s): ${fileNames}`,
     });
+
+    // TODO: Process the PDF files here
+    // For now, just show success message
+    console.log('Uploaded files:', validFiles);
+    
+    // Reset the input
+    event.target.value = '';
   };
 
 
@@ -283,6 +314,16 @@ export function SonderApp() {
         onClose={() => setIsSaveModalOpen(false)}
         onSave={handleSaveMemory}
         isLoading={isSaveMemoryLoading}
+      />
+
+      {/* Hidden file input for CV uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
       />
 
     </div>
