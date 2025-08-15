@@ -22,21 +22,6 @@ export function ChatArea({
 }: ChatAreaProps) {
   return (
     <div className="flex-1 flex flex-col bg-background">
-      {/* Header */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">Chat</h2>
-            <p className="text-sm text-muted-foreground">
-              Ask the assistant to find matches, create pitches or save notes
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">Find matches</Button>
-            <Button variant="ghost" size="sm">Staging</Button>
-          </div>
-        </div>
-      </div>
 
       {/* Messages */}
       <div className="flex-1 p-6 space-y-4 overflow-y-auto">

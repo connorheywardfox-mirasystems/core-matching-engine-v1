@@ -52,22 +52,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Active Role */}
-      <div className="p-6 border-b border-border">
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">Active role</h3>
-        <Select value={activeRole} onValueChange={onActiveRoleChange}>
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {mockRoles.map((role) => (
-              <SelectItem key={role} value={role}>
-                {role}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Demo User Selector */}
       <div className="p-6 border-b border-border">
