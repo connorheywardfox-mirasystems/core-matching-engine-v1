@@ -12,6 +12,7 @@ import {
   callSendIntroWebhook,
   callMatchDetailWebhook 
 } from "@/services/webhooks";
+import { extractTextFromPDF } from "@/utils/pdfUtils";
 
 
 export function SonderApp() {
@@ -234,7 +235,7 @@ export function SonderApp() {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -251,17 +252,99 @@ export function SonderApp() {
       return;
     }
 
-    // Process the files
-    const fileNames = validFiles.map(file => file.name).join(', ');
-    toast({
-      title: "Files uploaded",
-      description: `Successfully uploaded ${validFiles.length} CV(s): ${fileNames}`,
-    });
+    // Process each PDF file
+    for (const file of validFiles) {
+      try {
+        setIsLoading(true);
+        
+        // Extract text from PDF
+        const extractedText = await extractTextFromPDF(file);
+        
+        if (!extractedText.trim()) {
+          toast({
+            title: "Empty PDF",
+            description: `${file.name} appears to be empty or contains no readable text.`,
+            variant: "destructive",
+          });
+          continue;
+        }
 
-    // TODO: Process the PDF files here
-    // For now, just show success message
-    console.log('Uploaded files:', validFiles);
+        // Add user message showing file name
+        addMessage(`Uploaded CV: ${file.name}`, 'user');
+        
+        // Process the extracted text through matching webhook
+        const matchingRequest = {
+          candidate_text: extractedText,
+          user_id: "recruiter_demo"
+        };
+
+        const webhookResponse = await callMatchingWebhook(matchingRequest);
+        
+        // Use the same normalization logic as handleFindMatches
+        const normalizeMatches = (rawResp: any) => {
+          const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
+          const rawMatches = resp.all_matches || [];
+
+          const parseScore = (s: any): number => {
+            if (s === null || s === undefined) return 0;
+            if (typeof s === 'number') {
+              if (s <= 1) return Math.round(s * 100);
+              return Math.round(s);
+            }
+            const str = String(s).trim();
+            if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
+            if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
+            const n = parseFloat(str);
+            if (!isNaN(n)) {
+              if (n <= 1) return Math.round(n * 100);
+              return Math.round(n);
+            }
+            return 0;
+          };
+
+          const normalized = rawMatches.map((m: any) => ({
+            role_id: m.role_id || m.id || m.role_title,
+            role_title: m.role_title || m.title || 'Untitled Role',
+            description: (m.description || m.role_description || '').substring(0, 400),
+            match_score_num: parseScore(m.match_score || m.score),
+            match_score: `${parseScore(m.match_score || m.score)}%`,
+            match_reason: m.match_reason || m.reason || '',
+            matched_at: m.matched_at || new Date().toISOString()
+          }));
+
+          const map = new Map();
+          normalized.forEach((item: any) => {
+            const key = item.role_id || item.role_title;
+            if (!map.has(key) || item.match_score_num > map.get(key).match_score_num) {
+              map.set(key, item);
+            }
+          });
+
+          return Array.from(map.values())
+            .sort((a: any, b: any) => b.match_score_num - a.match_score_num)
+            .slice(0, 10);
+        };
+        
+        if (webhookResponse.success && webhookResponse.all_matches) {
+          const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
+          const topMatches = normalizeMatches(webhookResponse);
+          
+          setMatches(topMatches);
+          addMessage(
+            `I found ${totalMatches} matching roles for ${file.name}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+            'bot'
+          );
+        } else {
+          addMessage(`No matches found for ${file.name}.`, 'bot');
+        }
+
+      } catch (error) {
+        console.error('PDF processing error:', error);
+        addMessage(`Error processing ${file.name}: ${error.message}`, 'bot');
+      }
+    }
     
+    setIsLoading(false);
     // Reset the input
     event.target.value = '';
   };
