@@ -354,7 +354,7 @@ export function SonderApp() {
         onActiveRoleChange={setActiveRole}
         onCreatePitch={handleCreatePitch}
         onSaveMemory={handleQuickSaveMemory}
-        onImportCandidates={handleImportCandidates}
+        onFilesProcessed={handleFilesProcessed}
       />
 
       {/* Chat Area */}
