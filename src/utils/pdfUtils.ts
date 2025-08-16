@@ -1,7 +1,7 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
 // Configure the worker source for Vite - use CDN instead of local files
-GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.js`;
 
 export const extractTextFromPDF = async (file: File): Promise<string> => {
   try {
@@ -12,7 +12,7 @@ export const extractTextFromPDF = async (file: File): Promise<string> => {
     const pdf = await getDocument({
       data: arrayBuffer,
       // Add these options for better compatibility
-      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/cmaps/',
       cMapPacked: true,
     }).promise;
 
@@ -46,7 +46,7 @@ export const extractTextFromPDFAlt = async (file: File): Promise<string> => {
     const pdfjs = await import('pdfjs-dist');
     
     // Set worker source
-    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.js';
     
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
