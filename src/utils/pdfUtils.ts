@@ -1,126 +1,73 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
 
-// Configure worker with multiple fallback strategies
-const configureWorker = () => {
+// Configure the worker source for Vite - use CDN instead of local files
+GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+export const extractTextFromPDF = async (file: File): Promise<string> => {
   try {
-    // Try local worker first (most reliable for Vite/build environments)
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.js',
-      import.meta.url
-    ).toString();
+    // Convert file to ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Load the PDF document
+    const pdf = await getDocument({
+      data: arrayBuffer,
+      // Add these options for better compatibility
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+      cMapPacked: true,
+    }).promise;
+
+    let fullText = '';
+    
+    // Extract text from each page
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      // Combine all text items into a single string
+      const pageText = textContent.items
+        .filter((item): item is any => 'str' in item)
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += pageText + '\n';
+    }
+    
+    return fullText.trim();
   } catch (error) {
-    console.warn('Local worker failed, trying CDN fallback:', error);
-    // Fallback to CDN with exact version match
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.js';
+    console.error('Error extracting text from PDF:', error);
+    throw new Error(`PDF processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
-// Initialize worker configuration
-configureWorker();
-
-export async function extractTextFromPDF(file: File): Promise<string> {
+// Alternative approach if the above doesn't work - using dynamic import
+export const extractTextFromPDFAlt = async (file: File): Promise<string> => {
   try {
-    console.log('=== PDF EXTRACTION START ===');
-    console.log('File name:', file.name);
-    console.log('File type:', file.type);
-    console.log('File size:', file.size, 'bytes');
+    // Dynamic import to ensure proper loading
+    const pdfjs = await import('pdfjs-dist');
     
-    // Check if worker is properly configured
-    console.log('PDF.js worker source:', pdfjsLib.GlobalWorkerOptions.workerSrc);
+    // Set worker source
+    pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     
     const arrayBuffer = await file.arrayBuffer();
-    console.log('✓ ArrayBuffer created, size:', arrayBuffer.byteLength, 'bytes');
-    
-    console.log('Attempting to load PDF document...');
-    const loadingTask = pdfjsLib.getDocument({ 
-      data: arrayBuffer,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      useSystemFonts: true,
-      verbosity: 1
-    });
-    
-    // Add progress tracking
-    loadingTask.onProgress = (progress: any) => {
-      console.log('PDF loading progress:', Math.round((progress.loaded / progress.total) * 100) + '%');
-    };
-    
-    const pdf = await loadingTask.promise;
-    console.log('✓ PDF loaded successfully!');
-    console.log('Number of pages:', pdf.numPages);
-    
-    if (pdf.numPages === 0) {
-      throw new Error('PDF has no pages');
-    }
-    
+    const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+
     let fullText = '';
     
-    // Extract text from all pages
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      try {
-        console.log(`--- Processing page ${pageNum}/${pdf.numPages} ---`);
-        const page = await pdf.getPage(pageNum);
-        console.log('✓ Page loaded');
-        
-        const textContent = await page.getTextContent();
-        console.log('✓ Text content extracted, items:', textContent.items.length);
-        
-        const pageText = textContent.items
-          .map((item: any) => {
-            const text = item.str || '';
-            return text;
-          })
-          .filter(str => str.trim())
-          .join(' ')
-          .replace(/\s+/g, ' ')
-          .trim();
-        
-        fullText += pageText + ' ';
-        console.log(`✓ Page ${pageNum} processed: ${pageText.length} characters`);
-        
-        if (pageText.length === 0) {
-          console.warn(`⚠ Page ${pageNum} contains no readable text`);
-        }
-        
-      } catch (pageError) {
-        console.error(`Error processing page ${pageNum}:`, pageError);
-        // Continue with other pages
-      }
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      
+      const pageText = textContent.items
+        .filter((item): item is any => 'str' in item)
+        .map((item: any) => item.str)
+        .join(' ');
+      
+      fullText += pageText + '\n';
     }
     
-    const finalText = fullText.trim();
-    console.log('=== PDF EXTRACTION COMPLETE ===');
-    console.log('Total characters extracted:', finalText.length);
-    
-    if (finalText.length === 0) {
-      throw new Error('No readable text found in PDF - the document may be image-based or corrupted');
-    }
-    
-    console.log('Sample text (first 200 chars):', finalText.substring(0, 200));
-    return finalText;
-    
+    return fullText.trim();
   } catch (error) {
-    console.error('=== PDF EXTRACTION FAILED ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Full error:', error);
-    
-    // Provide more specific error messages
-    if (error.message.includes('Invalid PDF')) {
-      throw new Error('Invalid PDF file - the file may be corrupted or not a valid PDF');
-    }
-    if (error.message.includes('worker')) {
-      throw new Error('PDF processing failed - worker script could not be loaded');
-    }
-    if (error.message.includes('network')) {
-      throw new Error('Network error while processing PDF - please check your connection');
-    }
-    
-    // Re-throw the original error if it's already descriptive
-    if (error.message.length > 20) {
-      throw error;
-    }
-    
-    throw new Error(`Failed to extract text from PDF: ${error.message}`);
+    console.error('Error extracting text from PDF (alternative method):', error);
+    throw new Error(`PDF processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-}
+};
