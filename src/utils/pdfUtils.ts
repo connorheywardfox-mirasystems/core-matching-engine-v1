@@ -1,7 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Set worker path - using the same version as the installed package
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
+// Set worker path with fallback options
+try {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+} catch {
+  // Fallback to a stable version if version detection fails
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
@@ -13,7 +18,8 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       data: arrayBuffer,
       useWorkerFetch: false,
       isEvalSupported: false,
-      useSystemFonts: true
+      useSystemFonts: true,
+      verbosity: 0 // Reduce console noise
     }).promise;
     
     console.log('PDF loaded successfully, pages:', pdf.numPages);
@@ -28,7 +34,9 @@ export async function extractTextFromPDF(file: File): Promise<string> {
       const pageText = textContent.items
         .map((item: any) => item.str || '')
         .filter(str => str.trim())
-        .join(' ');
+        .join(' ')
+        .replace(/\s+/g, ' ') // Clean up multiple spaces
+        .trim();
       
       fullText += pageText + ' ';
       console.log(`Page ${pageNum} extracted ${pageText.length} characters`);
