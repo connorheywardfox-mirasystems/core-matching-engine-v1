@@ -1,7 +1,22 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Use CDN worker that matches the npm package version
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.js';
+// Configure worker with multiple fallback strategies
+const configureWorker = () => {
+  try {
+    // Try local worker first (most reliable for Vite/build environments)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.js',
+      import.meta.url
+    ).toString();
+  } catch (error) {
+    console.warn('Local worker failed, trying CDN fallback:', error);
+    // Fallback to CDN with exact version match
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.54/pdf.worker.min.js';
+  }
+};
+
+// Initialize worker configuration
+configureWorker();
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {

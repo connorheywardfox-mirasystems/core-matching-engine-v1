@@ -4,6 +4,7 @@ import { ChatArea } from "./ChatArea";
 import { MatchesPanel } from "./MatchesPanel";
 import { MatchDetailModal } from "./MatchDetailModal";
 import { SaveMemoryModal } from "./SaveMemoryModal";
+import { FileUploadDropzone } from "./FileUploadDropzone";
 import { ChatMessage, Match, DemoUser } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -12,13 +13,11 @@ import {
   callSendIntroWebhook,
   callMatchDetailWebhook 
 } from "@/services/webhooks";
-import { extractTextFromPDF } from "@/utils/pdfUtils";
 
 
 export function SonderApp() {
   console.log('SonderApp component loaded');
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // State
   const [demoUser, setDemoUser] = useState<DemoUser>('recruiter_demo');
@@ -27,6 +26,7 @@ export function SonderApp() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showUploadDropzone, setShowUploadDropzone] = useState(false);
   
   // Modal state
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -231,99 +231,70 @@ export function SonderApp() {
   };
 
   const handleImportCandidates = () => {
-    // Trigger the hidden file input
-    fileInputRef.current?.click();
+    setShowUploadDropzone(true);
   };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  const handleFilesProcessed = async (processedFiles: { file: File; text: string }[]) => {
+    setIsLoading(true);
+    
+    // Normalize matches function (extracted to avoid duplication)
+    const normalizeMatches = (rawResp: any) => {
+      const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
+      const rawMatches = resp.all_matches || [];
 
-    const validFiles = Array.from(files).filter(file => 
-      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    );
-
-    if (validFiles.length === 0) {
-      toast({
-        title: "Invalid file type",
-        description: "Please select PDF files only.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Process each PDF file
-    for (const file of validFiles) {
-      try {
-        setIsLoading(true);
-        
-        // Extract text from PDF
-        const extractedText = await extractTextFromPDF(file);
-        
-        if (!extractedText.trim()) {
-          toast({
-            title: "Empty PDF",
-            description: `${file.name} appears to be empty or contains no readable text.`,
-            variant: "destructive",
-          });
-          continue;
+      const parseScore = (s: any): number => {
+        if (s === null || s === undefined) return 0;
+        if (typeof s === 'number') {
+          if (s <= 1) return Math.round(s * 100);
+          return Math.round(s);
         }
+        const str = String(s).trim();
+        if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
+        if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
+        const n = parseFloat(str);
+        if (!isNaN(n)) {
+          if (n <= 1) return Math.round(n * 100);
+          return Math.round(n);
+        }
+        return 0;
+      };
 
+      const normalized = rawMatches.map((m: any) => ({
+        role_id: m.role_id || m.id || m.role_title,
+        role_title: m.role_title || m.title || 'Untitled Role',
+        description: (m.description || m.role_description || '').substring(0, 400),
+        match_score_num: parseScore(m.match_score || m.score),
+        match_score: `${parseScore(m.match_score || m.score)}%`,
+        match_reason: m.match_reason || m.reason || '',
+        matched_at: m.matched_at || new Date().toISOString()
+      }));
+
+      const map = new Map();
+      normalized.forEach((item: any) => {
+        const key = item.role_id || item.role_title;
+        if (!map.has(key) || item.match_score_num > map.get(key).match_score_num) {
+          map.set(key, item);
+        }
+      });
+
+      return Array.from(map.values())
+        .sort((a: any, b: any) => b.match_score_num - a.match_score_num)
+        .slice(0, 10);
+    };
+
+    // Process each successfully uploaded file
+    for (const { file, text } of processedFiles) {
+      try {
         // Add user message showing file name
         addMessage(`Uploaded CV: ${file.name}`, 'user');
         
         // Process the extracted text through matching webhook
         const matchingRequest = {
-          candidate_text: extractedText,
+          candidate_text: text,
           user_id: "recruiter_demo"
         };
 
         const webhookResponse = await callMatchingWebhook(matchingRequest);
-        
-        // Use the same normalization logic as handleFindMatches
-        const normalizeMatches = (rawResp: any) => {
-          const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
-          const rawMatches = resp.all_matches || [];
-
-          const parseScore = (s: any): number => {
-            if (s === null || s === undefined) return 0;
-            if (typeof s === 'number') {
-              if (s <= 1) return Math.round(s * 100);
-              return Math.round(s);
-            }
-            const str = String(s).trim();
-            if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
-            if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
-            const n = parseFloat(str);
-            if (!isNaN(n)) {
-              if (n <= 1) return Math.round(n * 100);
-              return Math.round(n);
-            }
-            return 0;
-          };
-
-          const normalized = rawMatches.map((m: any) => ({
-            role_id: m.role_id || m.id || m.role_title,
-            role_title: m.role_title || m.title || 'Untitled Role',
-            description: (m.description || m.role_description || '').substring(0, 400),
-            match_score_num: parseScore(m.match_score || m.score),
-            match_score: `${parseScore(m.match_score || m.score)}%`,
-            match_reason: m.match_reason || m.reason || '',
-            matched_at: m.matched_at || new Date().toISOString()
-          }));
-
-          const map = new Map();
-          normalized.forEach((item: any) => {
-            const key = item.role_id || item.role_title;
-            if (!map.has(key) || item.match_score_num > map.get(key).match_score_num) {
-              map.set(key, item);
-            }
-          });
-
-          return Array.from(map.values())
-            .sort((a: any, b: any) => b.match_score_num - a.match_score_num)
-            .slice(0, 10);
-        };
         
         if (webhookResponse.success && webhookResponse.all_matches) {
           const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
@@ -339,19 +310,42 @@ export function SonderApp() {
         }
 
       } catch (error) {
-        console.error('PDF processing error:', error);
+        console.error('Webhook error for file:', file.name, error);
         addMessage(`Error processing ${file.name}: ${error.message}`, 'bot');
       }
     }
     
     setIsLoading(false);
-    // Reset the input
-    event.target.value = '';
+    setShowUploadDropzone(false);
   };
 
 
   return (
     <div className="h-screen flex bg-background">
+      {/* Upload Dropzone Overlay */}
+      {showUploadDropzone && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] overflow-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Upload CV Files</h2>
+                <button
+                  onClick={() => setShowUploadDropzone(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              </div>
+              <FileUploadDropzone
+                onFilesProcessed={handleFilesProcessed}
+                maxFiles={10}
+                maxSize={10}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <Sidebar
         activeRole={activeRole}
@@ -398,17 +392,6 @@ export function SonderApp() {
         onSave={handleSaveMemory}
         isLoading={isSaveMemoryLoading}
       />
-
-      {/* Hidden file input for CV uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,application/pdf"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileSelect}
-      />
-
     </div>
   );
 }
