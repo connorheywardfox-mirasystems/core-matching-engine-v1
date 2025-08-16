@@ -1,29 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker with multiple fallback options
-const setupWorker = () => {
-  try {
-    // First try: Use the npm package worker
-    const workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).href;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-    console.log('Using npm worker:', workerSrc);
-  } catch (error) {
-    console.warn('Failed to load npm worker, trying CDN...', error);
-    try {
-      // Second try: Use CDN with known stable version
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      console.log('Using CDN worker');
-    } catch (cdnError) {
-      console.warn('CDN worker failed, using unpkg...', cdnError);
-      // Third try: Use unpkg as final fallback
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-      console.log('Using unpkg worker');
-    }
-  }
-};
-
-// Initialize worker
-setupWorker();
+// Use CDN worker - most reliable for browser environments
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
