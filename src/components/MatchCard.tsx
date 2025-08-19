@@ -30,8 +30,26 @@ export function MatchCard({ match, onView, onSendIntro, onSave }: MatchCardProps
             </Badge>
           </div>
           <h3 className="font-semibold text-foreground line-clamp-2 text-sm">
-            {match.role_title}
+            {match.display_title || match.role_title}
           </h3>
+          {match.firm_name && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {match.firm_website ? (
+                <a 
+                  href={match.firm_website} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {match.firm_name}
+                </a>
+              ) : (
+                match.firm_name
+              )}
+              {match.firm_location && ` • ${match.firm_location}`}
+            </p>
+          )}
         </div>
         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
           <Star className="h-4 w-4" />

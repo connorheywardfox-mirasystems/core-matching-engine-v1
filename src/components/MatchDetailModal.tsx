@@ -38,9 +38,27 @@ export function MatchDetailModal({
                 </Badge>
               </div>
               <DialogTitle className="text-xl leading-tight">
-                {match.role_title}
+                {match.display_title || match.role_title}
               </DialogTitle>
-              <p className="text-muted-foreground mt-1">{match.match_reason}</p>
+              {match.firm_name && (
+                <div className="text-muted-foreground mt-1 flex items-center gap-2">
+                  <Building className="w-4 h-4" />
+                  {match.firm_website ? (
+                    <a 
+                      href={match.firm_website} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="hover:text-foreground transition-colors font-medium"
+                    >
+                      {match.firm_name}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{match.firm_name}</span>
+                  )}
+                  {match.firm_location && <span>• {match.firm_location}</span>}
+                </div>
+              )}
+              <p className="text-muted-foreground mt-2 text-sm italic">{match.match_reason}</p>
             </div>
           </div>
         </DialogHeader>

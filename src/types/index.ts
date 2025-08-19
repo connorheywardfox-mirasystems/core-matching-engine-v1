@@ -4,6 +4,10 @@ export interface Match {
   description: string;
   match_reason: string;
   matched_at: string;
+  firm_name?: string;
+  firm_location?: string;
+  firm_website?: string;
+  display_title?: string;
 }
 
 export interface MatchingRequest {
