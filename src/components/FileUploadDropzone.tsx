@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface FileUploadDropzoneProps {
   onFilesProcessed: (files: { file: File; text?: string; fileData?: string }[]) => void;
+  onUploadComplete?: () => void; // Callback to close popup immediately after upload
   className?: string;
   accept?: string;
   maxFiles?: number;
@@ -23,6 +24,7 @@ interface FileWithStatus {
 
 export function FileUploadDropzone({ 
   onFilesProcessed, 
+  onUploadComplete,
   className,
   accept = '.pdf,.txt,application/pdf,text/plain',
   maxFiles = 10,
@@ -164,6 +166,8 @@ export function FileUploadDropzone({
     // Call callback with successfully processed files
     if (processedFiles.length > 0) {
       onFilesProcessed(processedFiles);
+      // Close popup immediately after successful upload
+      onUploadComplete?.();
     }
   }, [files.length, maxFiles, maxSize, onFilesProcessed, toast]);
 

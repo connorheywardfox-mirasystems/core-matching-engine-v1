@@ -324,7 +324,6 @@ export function SonderApp() {
     }
     
     setIsLoading(false);
-    setShowUploadDropzone(false);
   };
 
 
@@ -346,6 +345,7 @@ export function SonderApp() {
               </div>
               <FileUploadDropzone
                 onFilesProcessed={handleFilesProcessed}
+                onUploadComplete={() => setShowUploadDropzone(false)}
                 maxFiles={10}
                 maxSize={10}
               />
