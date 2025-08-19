@@ -41,24 +41,26 @@ export function MatchDetailModal({
                 {match.display_title || match.role_title}
               </DialogTitle>
               {match.firm_name && (
-                <div className="text-muted-foreground mt-1 flex items-center gap-2">
-                  <Building className="w-4 h-4" />
-                  {match.firm_website ? (
-                    <a 
-                      href={match.firm_website} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="hover:text-foreground transition-colors font-medium"
-                    >
-                      {match.firm_name}
-                    </a>
-                  ) : (
+                <div className="text-muted-foreground mt-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-4 h-4" />
                     <span className="font-medium">{match.firm_name}</span>
+                    {match.firm_location && <span>• {match.firm_location}</span>}
+                  </div>
+                  {match.firm_website && (
+                    <div className="flex items-center gap-2 ml-6">
+                      <a 
+                        href={match.firm_website} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm hover:text-foreground transition-colors underline"
+                      >
+                        Visit website
+                      </a>
+                    </div>
                   )}
-                  {match.firm_location && <span>• {match.firm_location}</span>}
                 </div>
               )}
-              <p className="text-muted-foreground mt-2 text-sm italic">{match.match_reason}</p>
             </div>
           </div>
         </DialogHeader>
