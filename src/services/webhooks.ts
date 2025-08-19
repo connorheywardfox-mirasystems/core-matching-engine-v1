@@ -124,21 +124,7 @@ export async function callMatchDetailWebhook(request: MatchDetailRequest): Promi
     logWebhookCall(ENDPOINTS.matchDetail, request, data);
     return data;
   } catch (error) {
-    console.warn('Match detail webhook failed, using mock response:', error);
-    
-    // Find match in mock data
-    const match = mockMatches.find(m => m.role_title === request.role_id);
-    if (!match) throw new Error('Match not found');
-    
-    // Simulate network delay
-    await simulateNetworkDelay(200, 400);
-    
-    const mockResponse: MatchDetailResponse = {
-      ...match,
-      long_description: match.description
-    };
-    
-    logWebhookCall(ENDPOINTS.matchDetail, request, mockResponse, true);
-    return mockResponse;
+    console.warn('Match detail webhook failed:', error);
+    throw error;
   }
 }

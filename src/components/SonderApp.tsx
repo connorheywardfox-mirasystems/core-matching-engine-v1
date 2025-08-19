@@ -94,7 +94,11 @@ export function SonderApp() {
           match_score_num: parseScore(m.match_score || m.score),
           match_score: `${parseScore(m.match_score || m.score)}%`,
           match_reason: m.match_reason || m.reason || '',
-          matched_at: m.matched_at || new Date().toISOString()
+          matched_at: m.matched_at || new Date().toISOString(),
+          firm_name: m.firm_name,
+          firm_location: m.firm_location,
+          firm_website: m.firm_website,
+          display_title: m.display_title
         }));
 
         // Dedupe by role_id keeping the highest score
@@ -266,7 +270,11 @@ export function SonderApp() {
         match_score_num: parseScore(m.match_score || m.score),
         match_score: `${parseScore(m.match_score || m.score)}%`,
         match_reason: m.match_reason || m.reason || '',
-        matched_at: m.matched_at || new Date().toISOString()
+        matched_at: m.matched_at || new Date().toISOString(),
+        firm_name: m.firm_name,
+        firm_location: m.firm_location,
+        firm_website: m.firm_website,
+        display_title: m.display_title
       }));
 
       const map = new Map();
