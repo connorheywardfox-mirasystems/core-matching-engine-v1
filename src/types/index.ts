@@ -7,7 +7,9 @@ export interface Match {
 }
 
 export interface MatchingRequest {
-  candidate_text: string;
+  candidate_text?: string;
+  file_data?: string;
+  file_name?: string;
   role_id?: string | null;
   user_id: string;
 }

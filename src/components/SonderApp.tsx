@@ -234,7 +234,7 @@ export function SonderApp() {
     setShowUploadDropzone(true);
   };
 
-  const handleFilesProcessed = async (processedFiles: { file: File; text: string }[]) => {
+  const handleFilesProcessed = async (processedFiles: { file: File; text?: string; fileData?: string }[]) => {
     setIsLoading(true);
     
     // Normalize matches function (extracted to avoid duplication)
@@ -283,16 +283,24 @@ export function SonderApp() {
     };
 
     // Process each successfully uploaded file
-    for (const { file, text } of processedFiles) {
+    for (const { file, text, fileData } of processedFiles) {
       try {
         // Add user message showing file name
         addMessage(`Uploaded CV: ${file.name}`, 'user');
         
-        // Process the extracted text through matching webhook
-        const matchingRequest = {
-          candidate_text: text,
-          user_id: "recruiter_demo"
-        };
+        // Create matching request based on file type
+        const matchingRequest = fileData 
+          ? {
+              // PDF file: send base64 data for backend processing
+              file_data: fileData,
+              file_name: file.name,
+              user_id: "recruiter_demo"
+            }
+          : {
+              // Text file: send extracted text
+              candidate_text: text,
+              user_id: "recruiter_demo"
+            };
 
         const webhookResponse = await callMatchingWebhook(matchingRequest);
         

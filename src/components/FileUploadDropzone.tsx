@@ -3,10 +3,9 @@ import { Upload, FileText, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { extractTextFromPDF } from '@/utils/pdfUtils';
 
 interface FileUploadDropzoneProps {
-  onFilesProcessed: (files: { file: File; text: string }[]) => void;
+  onFilesProcessed: (files: { file: File; text?: string; fileData?: string }[]) => void;
   className?: string;
   accept?: string;
   maxFiles?: number;
@@ -17,6 +16,7 @@ interface FileWithStatus {
   file: File;
   status: 'pending' | 'processing' | 'success' | 'error';
   text?: string;
+  fileData?: string;
   error?: string;
   progress?: number;
 }
@@ -24,7 +24,7 @@ interface FileWithStatus {
 export function FileUploadDropzone({ 
   onFilesProcessed, 
   className,
-  accept = '.pdf,application/pdf',
+  accept = '.pdf,.txt,application/pdf,text/plain',
   maxFiles = 10,
   maxSize = 10 // 10MB default
 }: FileUploadDropzoneProps) {
@@ -36,8 +36,11 @@ export function FileUploadDropzone({
 
   const validateFile = (file: File): string | null => {
     // Check file type
-    if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
-      return 'File must be a PDF';
+    const isPDF = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+    const isText = file.type.includes('text') || file.name.toLowerCase().endsWith('.txt');
+    
+    if (!isPDF && !isText) {
+      return 'File must be a PDF or TXT file';
     }
     
     // Check file size
@@ -93,10 +96,11 @@ export function FileUploadDropzone({
     setIsProcessing(true);
 
     // Process files one by one
-    const processedFiles: { file: File; text: string }[] = [];
+    const processedFiles: { file: File; text?: string; fileData?: string }[] = [];
     
     for (let i = 0; i < newFiles.length; i++) {
       const fileWithStatus = newFiles[i];
+      const isPDF = fileWithStatus.file.type.includes('pdf') || fileWithStatus.file.name.toLowerCase().endsWith('.pdf');
       
       try {
         // Update status to processing
@@ -106,21 +110,36 @@ export function FileUploadDropzone({
             : f
         ));
 
-        // Extract text from PDF with progress simulation
-        const text = await extractTextFromPDF(fileWithStatus.file);
-        
-        if (!text.trim()) {
-          throw new Error('No readable text found in PDF');
+        if (isPDF) {
+          // Convert PDF to base64 for backend processing
+          const arrayBuffer = await fileWithStatus.file.arrayBuffer();
+          const base64Data = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          // Update status to success
+          setFiles(prev => prev.map(f => 
+            f.file === fileWithStatus.file 
+              ? { ...f, status: 'success', fileData: base64Data, progress: 100 }
+              : f
+          ));
+
+          processedFiles.push({ file: fileWithStatus.file, fileData: base64Data });
+        } else {
+          // Read text file content
+          const text = await fileWithStatus.file.text();
+          
+          if (!text.trim()) {
+            throw new Error('No readable text found in file');
+          }
+
+          // Update status to success
+          setFiles(prev => prev.map(f => 
+            f.file === fileWithStatus.file 
+              ? { ...f, status: 'success', text, progress: 100 }
+              : f
+          ));
+
+          processedFiles.push({ file: fileWithStatus.file, text });
         }
-
-        // Update status to success
-        setFiles(prev => prev.map(f => 
-          f.file === fileWithStatus.file 
-            ? { ...f, status: 'success', text, progress: 100 }
-            : f
-        ));
-
-        processedFiles.push({ file: fileWithStatus.file, text });
         
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Failed to process file';
@@ -230,7 +249,7 @@ export function FileUploadDropzone({
           
           <div className="space-y-2">
             <p className="text-sm font-medium">
-              {isDragOver ? "Drop files here" : "Drag & drop PDF files here"}
+              {isDragOver ? "Drop files here" : "Drag & drop PDF or TXT files here"}
             </p>
             <p className="text-xs text-muted-foreground">
               or click to browse • Max {maxFiles} files • Up to {maxSize}MB each
@@ -281,7 +300,11 @@ export function FileUploadDropzone({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {(fileWithStatus.file.size / 1024 / 1024).toFixed(1)} MB
-                    {fileWithStatus.status === 'processing' && " • Processing..."}
+                    {fileWithStatus.status === 'processing' && (
+                      fileWithStatus.file.name.toLowerCase().endsWith('.pdf') 
+                        ? " • Processing PDF..." 
+                        : " • Processing text..."
+                    )}
                     {fileWithStatus.status === 'success' && " • Ready"}
                     {fileWithStatus.status === 'error' && ` • ${fileWithStatus.error}`}
                   </p>
