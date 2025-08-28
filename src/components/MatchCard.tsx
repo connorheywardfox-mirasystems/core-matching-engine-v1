@@ -56,11 +56,11 @@ export function MatchCard({ match, onView, onSendIntro, onSave }: MatchCardProps
         </Button>
       </div>
 
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+      <p className="text-xs text-muted-foreground mb-3">
         {match.description}
       </p>
 
-      <p className="text-xs text-muted-foreground mb-4 line-clamp-1 italic">
+      <p className="text-xs text-muted-foreground mb-4 italic">
         Match reason: {match.match_reason}
       </p>
 

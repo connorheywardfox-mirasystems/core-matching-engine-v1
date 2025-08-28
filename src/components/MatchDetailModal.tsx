@@ -66,13 +66,39 @@ export function MatchDetailModal({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Salary Information */}
+          {(() => {
+            const salaryMatch = match.description.match(/(?:salary|compensation|pay|package|earning)[:\s]*[£$€]?([\d,]+(?:\.\d+)?)\s*(?:k|K|000)?(?:\s*-\s*[£$€]?([\d,]+(?:\.\d+)?)?\s*(?:k|K|000)?)?/i);
+            if (salaryMatch) {
+              const fullMatch = salaryMatch[0];
+              const formatSalary = (text: string) => {
+                return text.replace(/(\d+)k?/gi, (match, num) => {
+                  const number = parseInt(num);
+                  return number < 1000 ? `${number}k` : number.toLocaleString();
+                });
+              };
+              
+              return (
+                <div>
+                  <h3 className="font-medium text-foreground mb-3">Compensation</h3>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm font-medium text-green-800">
+                      {formatSalary(fullMatch)}
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* Job Description */}
           <div>
             <h3 className="font-medium text-foreground mb-3">Role Description</h3>
             <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                 {match.description}
-              </p>
+              </div>
             </div>
           </div>
 
