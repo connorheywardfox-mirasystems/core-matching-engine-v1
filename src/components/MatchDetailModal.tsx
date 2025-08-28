@@ -70,7 +70,7 @@ export function MatchDetailModal({
           <div>
             <h3 className="font-medium text-foreground mb-3">Role Description</h3>
             <div className="bg-muted/50 rounded-lg p-4">
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                 {match.description}
               </p>
             </div>
@@ -80,9 +80,14 @@ export function MatchDetailModal({
           <div>
             <h3 className="font-medium text-foreground mb-3">Why this matches</h3>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <p className="text-sm text-foreground leading-relaxed">
-                {match.match_reason}
-              </p>
+              <div className="text-sm text-foreground leading-relaxed space-y-2">
+                {match.match_reason.split(/[•\-\n]/).filter(reason => reason.trim()).map((reason, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span>{reason.trim()}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
