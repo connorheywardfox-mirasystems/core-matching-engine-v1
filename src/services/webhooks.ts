@@ -12,7 +12,7 @@ import { mockMatches, simulateNetworkDelay } from './mockData';
 
 // Webhook URLs - using your n8n endpoint
 const ENDPOINTS = {
-  matching: 'https://connorheywardfox.app.n8n.cloud/webhook/match',
+  matching: 'https://connorheywardfox.app.n8n.cloud/webhook/52249d03-6351-4fff-903a-0fbb2def2d28',
   memory: `https://connorheywardfox.app.n8n.cloud/webhook/memory-ingest`,
   sendIntro: `https://connorheywardfox.app.n8n.cloud/webhook/send-intro`,
   matchDetail: `https://connorheywardfox.app.n8n.cloud/webhook/match-detail`
@@ -28,21 +28,34 @@ const logWebhookCall = (endpoint: string, payload: any, response: any, isMock = 
 };
 
 export async function callMatchingWebhook(request: MatchingRequest): Promise<any> {
-  const response = await fetch(ENDPOINTS.matching, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Webhook failed with status ${response.status}`);
-  }
+  console.log('🚀 Calling matching webhook:', ENDPOINTS.matching);
+  console.log('📤 Request payload:', request);
   
-  const data = await response.json();
-  logWebhookCall(ENDPOINTS.matching, request, data);
-  return data;
+  try {
+    const response = await fetch(ENDPOINTS.matching, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    console.log('📡 Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Matching webhook failed:', errorText);
+      throw new Error(`Matching webhook failed with status ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ Matching webhook success - received response:', data);
+    logWebhookCall(ENDPOINTS.matching, request, data);
+    return data;
+  } catch (error) {
+    console.error('💥 Matching webhook error:', error);
+    throw error;
+  }
 }
 
 export async function callSaveMemoryWebhook(request: SaveMemoryRequest): Promise<SaveMemoryResponse> {
