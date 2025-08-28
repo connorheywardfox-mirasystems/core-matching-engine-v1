@@ -80,13 +80,31 @@ export function MatchDetailModal({
           <div>
             <h3 className="font-medium text-foreground mb-3">Why this matches</h3>
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-              <div className="text-sm text-foreground leading-relaxed space-y-2">
-                {match.match_reason.split(/[•\-\n]/).filter(reason => reason.trim()).map((reason, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <span className="text-primary mt-1">•</span>
-                    <span>{reason.trim()}</span>
-                  </div>
-                ))}
+              <div className="text-sm text-foreground leading-relaxed space-y-3">
+                {match.match_reason.split(/(?=Key strengths:|Points to address:|Placement likelihood:|Recommended next step:)/i).map((section, index) => {
+                  const trimmed = section.trim();
+                  if (!trimmed) return null;
+                  
+                  // Check if this is a labeled section
+                  const isLabeledSection = /^(Key strengths:|Points to address:|Placement likelihood:|Recommended next step:)/i.test(trimmed);
+                  
+                  if (isLabeledSection) {
+                    const [label, ...content] = trimmed.split(':');
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="font-medium text-foreground">{label}:</div>
+                        <div className="pl-3">{content.join(':').trim()}</div>
+                      </div>
+                    );
+                  } else {
+                    // First summary section or other content
+                    return (
+                      <div key={index}>
+                        {trimmed}
+                      </div>
+                    );
+                  }
+                }).filter(Boolean)}
               </div>
             </div>
           </div>
