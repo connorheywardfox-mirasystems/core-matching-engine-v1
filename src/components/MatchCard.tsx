@@ -60,7 +60,7 @@ export function MatchCard({ match, onView, onSendIntro, onSave }: MatchCardProps
         {match.description}
       </p>
 
-      <p className="text-xs text-muted-foreground mb-4 italic">
+      <p className="text-xs text-muted-foreground mb-4 line-clamp-2 italic">
         Match reason: {match.match_reason}
       </p>
 
