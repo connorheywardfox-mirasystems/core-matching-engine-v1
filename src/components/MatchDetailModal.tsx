@@ -25,7 +25,7 @@ export function MatchDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -69,8 +69,8 @@ export function MatchDetailModal({
           {/* Job Description */}
           <div>
             <h3 className="font-medium text-foreground mb-3">Role Description</h3>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+            <div className="bg-muted/50 rounded-lg p-6 min-h-[200px]">
+              <div className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
                 {match.description}
               </div>
             </div>
