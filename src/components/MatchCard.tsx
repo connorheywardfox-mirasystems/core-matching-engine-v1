@@ -28,6 +28,11 @@ export function MatchCard({ match, onView, onSendIntro, onSave }: MatchCardProps
             <Badge className={`text-xs font-medium ${getScoreColor(scoreValue)}`}>
               {match.match_score} match
             </Badge>
+            {match.match_category && (
+              <Badge variant="secondary" className="text-xs">
+                {match.match_category}
+              </Badge>
+            )}
           </div>
           <h3 className="font-semibold text-foreground line-clamp-2 text-sm">
             {match.display_title || match.role_title}

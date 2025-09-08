@@ -90,9 +90,10 @@ export function SonderApp() {
         const normalized = rawMatches.map((m: any) => ({
           role_id: m.role_id || m.id || m.role_title,
           role_title: m.role_title || m.title || 'Untitled Role',
-          description: (m.description || m.role_description || '').substring(0, 400),
+          description: (m.description || m.role_description || ''),
           match_score_num: parseScore(m.match_score || m.score),
           match_score: `${parseScore(m.match_score || m.score)}%`,
+          match_category: m.match_category,
           match_reason: m.match_reason || m.reason || '',
           matched_at: m.matched_at || new Date().toISOString(),
           firm_name: m.firm_name,
@@ -121,8 +122,9 @@ export function SonderApp() {
         const topMatches = normalizeMatches(webhookResponse);
         
         setMatches(topMatches);
+        // Display the main message from webhook response
         addMessage(
-          `I found ${totalMatches} matching roles for your CV! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+          webhookResponse.message || `I found ${totalMatches} matching roles for your CV! Here are the top ${Math.min(10, topMatches.length)} matches:`,
           'bot'
         );
       } else {
@@ -266,9 +268,10 @@ export function SonderApp() {
       const normalized = rawMatches.map((m: any) => ({
         role_id: m.role_id || m.id || m.role_title,
         role_title: m.role_title || m.title || 'Untitled Role',
-        description: (m.description || m.role_description || '').substring(0, 400),
+        description: (m.description || m.role_description || ''),
         match_score_num: parseScore(m.match_score || m.score),
         match_score: `${parseScore(m.match_score || m.score)}%`,
+        match_category: m.match_category,
         match_reason: m.match_reason || m.reason || '',
         matched_at: m.matched_at || new Date().toISOString(),
         firm_name: m.firm_name,
@@ -317,12 +320,13 @@ export function SonderApp() {
           const topMatches = normalizeMatches(webhookResponse);
           
           setMatches(topMatches);
+          // Display the main message from webhook response
           addMessage(
-            `I found ${totalMatches} matching roles for ${file.name}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+            webhookResponse.message || `I found ${totalMatches} matching roles for ${file.name}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
             'bot'
           );
         } else {
-          addMessage(`No matches found for ${file.name}.`, 'bot');
+          addMessage(webhookResponse.message || `No matches found for ${file.name}.`, 'bot');
         }
 
       } catch (error) {

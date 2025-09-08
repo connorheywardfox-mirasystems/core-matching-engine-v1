@@ -1,6 +1,7 @@
 export interface Match {
   role_title: string;
   match_score: string;
+  match_category?: string;
   description: string;
   match_reason: string;
   matched_at: string;
