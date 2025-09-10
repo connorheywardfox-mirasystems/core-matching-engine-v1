@@ -13,6 +13,7 @@ import {
   callSendIntroWebhook,
   callMatchDetailWebhook 
 } from "@/services/webhooks";
+import { generateMatchesPDF } from "@/lib/pdfGenerator";
 
 
 export function SonderApp() {
@@ -240,6 +241,26 @@ export function SonderApp() {
     setShowUploadDropzone(true);
   };
 
+  // Handle download PDF
+  const handleDownloadPDF = () => {
+    if (matches.length === 0) return;
+    
+    try {
+      generateMatchesPDF(matches);
+      toast({
+        title: "PDF Downloaded",
+        description: `Downloaded ${matches.length} matches as PDF.`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleFilesProcessed = async (processedFiles: { file: File; text?: string; fileData?: string }[]) => {
     setIsLoading(true);
     
@@ -393,6 +414,7 @@ export function SonderApp() {
         onViewMatch={handleViewMatch}
         onSendIntro={handleSendIntro}
         onSaveMatch={handleSaveMatch}
+        onDownloadPDF={handleDownloadPDF}
       />
 
       {/* Match Detail Modal */}

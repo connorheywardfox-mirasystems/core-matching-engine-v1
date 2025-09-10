@@ -1,6 +1,8 @@
 import { Match } from "@/types";
 import { MatchCard } from "./MatchCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 interface MatchesPanelProps {
   matches: Match[];
@@ -8,6 +10,7 @@ interface MatchesPanelProps {
   onViewMatch: (match: Match) => void;
   onSendIntro: (match: Match) => void;
   onSaveMatch: (match: Match) => void;
+  onDownloadPDF: () => void;
 }
 
 function MatchSkeleton() {
@@ -39,7 +42,8 @@ export function MatchesPanel({
   isLoading,
   onViewMatch,
   onSendIntro,
-  onSaveMatch
+  onSaveMatch,
+  onDownloadPDF
 }: MatchesPanelProps) {
   return (
     <div className="w-96 bg-background border-l border-border flex flex-col">
@@ -89,6 +93,20 @@ export function MatchesPanel({
           </div>
         )}
       </div>
+
+      {/* Download PDF - Only show when there are matches */}
+      {matches.length > 0 && (
+        <div className="p-6 border-t border-border">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-muted-foreground hover:text-foreground" 
+            onClick={onDownloadPDF}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download as PDF
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
