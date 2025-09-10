@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DemoUser } from "@/types";
-import { Settings, User } from "lucide-react";
+import { Settings, User, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   activeRole: string;
@@ -34,6 +35,7 @@ export function Sidebar({
   onSaveMemory,
   onImportCandidates
 }: SidebarProps) {
+  const { logout } = useAuth();
   return (
     <div className="w-80 bg-background border-r border-border flex flex-col">
       {/* Header */}
@@ -109,6 +111,18 @@ export function Sidebar({
             Import candidates
           </Button>
         </div>
+      </div>
+
+      {/* Logout */}
+      <div className="p-6 border-t border-border">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground hover:text-foreground" 
+          onClick={logout}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
       </div>
     </div>
   );
