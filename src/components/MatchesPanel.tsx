@@ -94,19 +94,18 @@ export function MatchesPanel({
         )}
       </div>
 
-      {/* Download PDF - Only show when there are matches */}
-      {matches.length > 0 && (
-        <div className="p-6 border-t border-border">
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-muted-foreground hover:text-foreground" 
-            onClick={onDownloadPDF}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Download as PDF
-          </Button>
-        </div>
-      )}
+      {/* Download PDF */}
+      <div className="p-6 border-t border-border">
+        <Button 
+          variant="ghost" 
+          className="w-full justify-start text-muted-foreground hover:text-foreground" 
+          onClick={onDownloadPDF}
+          disabled={matches.length === 0}
+        >
+          <Download className="w-4 h-4 mr-2" />
+          Download as PDF
+        </Button>
+      </div>
     </div>
   );
 }
