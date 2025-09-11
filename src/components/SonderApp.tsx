@@ -70,7 +70,13 @@ export function SonderApp() {
       const normalizeMatches = (rawResp: any) => {
         const rawMatches = rawResp.all_matches || [];
 
-        const parseScore = (s: any): number => {
+        const parseScore = (match: any): number => {
+          // Prioritize match_score_raw when available for accuracy
+          if (match.match_score_raw !== null && match.match_score_raw !== undefined) {
+            return Math.round(match.match_score_raw);
+          }
+          
+          const s = match.match_score || match.score;
           if (s === null || s === undefined) return 0;
           if (typeof s === 'number') {
             if (s <= 1) return Math.round(s * 100); // 0.09 -> 9%
@@ -87,20 +93,24 @@ export function SonderApp() {
           return 0;
         };
 
-        const normalized = rawMatches.map((m: any) => ({
-          role_id: m.role_id || m.id || m.role_title,
-          role_title: m.role_title || m.title || 'Untitled Role',
-          description: (m.description || m.role_description || ''),
-          match_score_num: parseScore(m.match_score || m.score),
-          match_score: `${parseScore(m.match_score || m.score)}%`,
-          match_category: m.match_category,
-          match_reason: m.match_reason || m.reason || '',
-          matched_at: m.matched_at || new Date().toISOString(),
-          firm_name: m.firm_name,
-          firm_location: m.firm_location,
-          firm_website: m.firm_website,
-          display_title: m.display_title
-        }));
+        const normalized = rawMatches.map((m: any) => {
+          const scoreNum = parseScore(m);
+          return {
+            role_id: m.role_id || m.id || m.role_title,
+            role_title: m.role_title || m.title || 'Untitled Role',
+            description: (m.description || m.role_description || ''),
+            match_score_num: scoreNum,
+            match_score: `${scoreNum}%`,
+            match_score_raw: m.match_score_raw,
+            match_category: m.match_category,
+            match_reason: m.match_reason || m.reason || '',
+            matched_at: m.matched_at || new Date().toISOString(),
+            firm_name: m.firm_name,
+            firm_location: m.firm_location,
+            firm_website: m.firm_website,
+            display_title: m.display_title
+          };
+        });
 
         // Dedupe by role_id keeping the highest score
         const map = new Map();
@@ -117,16 +127,26 @@ export function SonderApp() {
       };
       
       // Parse response and display friendly message
-      if (webhookResponse.success && webhookResponse.all_matches) {
+      if (webhookResponse.success && webhookResponse.all_matches && webhookResponse.all_matches.length > 0) {
         const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
         const topMatches = normalizeMatches(webhookResponse);
+        const candidateName = webhookResponse.candidate_name ? ` for ${webhookResponse.candidate_name}` : '';
         
         setMatches(topMatches);
         // Display the main message from webhook response
         addMessage(
-          webhookResponse.message || `I found ${totalMatches} matching roles for your CV! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+          webhookResponse.message || `I found ${totalMatches} matching roles${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
           'bot'
         );
+        
+        // Display readable summary if available
+        if (webhookResponse.readable_summary) {
+          addMessage(webhookResponse.readable_summary, 'bot');
+        }
+      } else if (webhookResponse.success && webhookResponse.total_matches === 0) {
+        const candidateName = webhookResponse.candidate_name || 'this candidate';
+        addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
+        setMatches([]);
       } else {
         addMessage(webhookResponse.message || 'No matches found for your CV.', 'bot');
         setMatches([]);
@@ -263,41 +283,51 @@ export function SonderApp() {
   const handleFilesProcessed = async (processedFiles: { file: File; text?: string; fileData?: string }[]) => {
     setIsLoading(true);
     
-    // Normalize matches function (extracted to avoid duplication)
+    // Use the same normalize function to avoid duplication
+    const parseScore = (match: any): number => {
+      // Prioritize match_score_raw when available for accuracy
+      if (match.match_score_raw !== null && match.match_score_raw !== undefined) {
+        return Math.round(match.match_score_raw);
+      }
+      
+      const s = match.match_score || match.score;
+      if (s === null || s === undefined) return 0;
+      if (typeof s === 'number') {
+        if (s <= 1) return Math.round(s * 100);
+        return Math.round(s);
+      }
+      const str = String(s).trim();
+      if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
+      if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
+      const n = parseFloat(str);
+      if (!isNaN(n)) {
+        if (n <= 1) return Math.round(n * 100);
+        return Math.round(n);
+      }
+      return 0;
+    };
+
     const normalizeMatches = (rawResp: any) => {
       const rawMatches = rawResp.all_matches || [];
 
-      const parseScore = (s: any): number => {
-        if (s === null || s === undefined) return 0;
-        if (typeof s === 'number') {
-          if (s <= 1) return Math.round(s * 100);
-          return Math.round(s);
-        }
-        const str = String(s).trim();
-        if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
-        if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
-        const n = parseFloat(str);
-        if (!isNaN(n)) {
-          if (n <= 1) return Math.round(n * 100);
-          return Math.round(n);
-        }
-        return 0;
-      };
-
-      const normalized = rawMatches.map((m: any) => ({
-        role_id: m.role_id || m.id || m.role_title,
-        role_title: m.role_title || m.title || 'Untitled Role',
-        description: (m.description || m.role_description || ''),
-        match_score_num: parseScore(m.match_score || m.score),
-        match_score: `${parseScore(m.match_score || m.score)}%`,
-        match_category: m.match_category,
-        match_reason: m.match_reason || m.reason || '',
-        matched_at: m.matched_at || new Date().toISOString(),
-        firm_name: m.firm_name,
-        firm_location: m.firm_location,
-        firm_website: m.firm_website,
-        display_title: m.display_title
-      }));
+      const normalized = rawMatches.map((m: any) => {
+        const scoreNum = parseScore(m);
+        return {
+          role_id: m.role_id || m.id || m.role_title,
+          role_title: m.role_title || m.title || 'Untitled Role',
+          description: (m.description || m.role_description || ''),
+          match_score_num: scoreNum,
+          match_score: `${scoreNum}%`,
+          match_score_raw: m.match_score_raw,
+          match_category: m.match_category,
+          match_reason: m.match_reason || m.reason || '',
+          matched_at: m.matched_at || new Date().toISOString(),
+          firm_name: m.firm_name,
+          firm_location: m.firm_location,
+          firm_website: m.firm_website,
+          display_title: m.display_title
+        };
+      });
 
       const map = new Map();
       normalized.forEach((item: any) => {
@@ -334,16 +364,25 @@ export function SonderApp() {
 
         const webhookResponse = await callMatchingWebhook(matchingRequest);
         
-        if (webhookResponse.success && webhookResponse.all_matches) {
+        if (webhookResponse.success && webhookResponse.all_matches && webhookResponse.all_matches.length > 0) {
           const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
           const topMatches = normalizeMatches(webhookResponse);
+          const candidateName = webhookResponse.candidate_name || file.name;
           
           setMatches(topMatches);
           // Display the main message from webhook response
           addMessage(
-            webhookResponse.message || `I found ${totalMatches} matching roles for ${file.name}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+            webhookResponse.message || `I found ${totalMatches} matching roles for ${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
             'bot'
           );
+          
+          // Display readable summary if available
+          if (webhookResponse.readable_summary) {
+            addMessage(webhookResponse.readable_summary, 'bot');
+          }
+        } else if (webhookResponse.success && webhookResponse.total_matches === 0) {
+          const candidateName = webhookResponse.candidate_name || file.name;
+          addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
         } else {
           addMessage(webhookResponse.message || `No matches found for ${file.name}.`, 'bot');
         }
