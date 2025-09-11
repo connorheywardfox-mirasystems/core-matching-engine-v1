@@ -40,36 +40,27 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
       body: JSON.stringify(request),
     });
 
-    console.log('📡 Response status:', response.status, response.statusText);
-
-    // Backend now returns consistent object format
-    const data = await response.json();
+    // Don't check status codes or headers - just parse the response
+    let data;
+    try {
+      const text = await response.text();
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Parse error:', e);
+      throw new Error('Invalid JSON response');
+    }
+    
     console.log('📋 Parsed response data:', data);
     
-    // Validate new consistent object structure
-    if (data && data.success && data.all_matches) {
-      console.log('✅ Valid response with', data.total_matches, 'matches');
+    // The response is ALWAYS a valid object with matches
+    // Don't check anything else - just use it
+    if (data && data.all_matches !== undefined) {
+      console.log('✅ Response with', data.all_matches?.length || 0, 'matches');
       logWebhookCall(ENDPOINTS.matching, request, data);
       return data;
     }
     
-    // Handle no matches case
-    if (data && data.total_matches === 0) {
-      console.log('✅ Valid response with 0 matches');
-      logWebhookCall(ENDPOINTS.matching, request, data);
-      return data;
-    }
-    
-    // Handle error responses
-    if (data && data.error) {
-      console.log('⚠️ Webhook returned error response:', data.error);
-      logWebhookCall(ENDPOINTS.matching, request, data);
-      return data;
-    }
-    
-    // Invalid response structure
-    console.error('❌ Invalid response structure:', data);
-    throw new Error(data?.message || 'Invalid response structure');
+    throw new Error('Response missing required fields');
     
   } catch (error) {
     console.error('💥 Matching webhook error:', error);
