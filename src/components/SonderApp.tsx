@@ -47,71 +47,71 @@ export function SonderApp() {
       matchCount: webhookResponse?.all_matches?.length || 0
     });
     
+    // Coerce all_matches to array (handles both array and object responses)
+    const rawAllMatches = webhookResponse?.all_matches ?? [];
+    const matchesArray = Array.isArray(rawAllMatches) 
+      ? rawAllMatches 
+      : (rawAllMatches && typeof rawAllMatches === 'object' ? Object.values(rawAllMatches) : []);
+    
+    console.log('🔄 Coerced matches:', { 
+      originalType: Array.isArray(rawAllMatches) ? 'array' : typeof rawAllMatches,
+      matchesArrayLength: matchesArray.length 
+    });
+    
     // Normalize and clean webhook response data
     const normalizeMatches = (rawResp: any) => {
       const rawMatches = rawResp.all_matches || [];
-
-      const parseScore = (match: any): number => {
-        // Prioritize match_score_raw when available for accuracy
-        if (match.match_score_raw !== null && match.match_score_raw !== undefined) {
-          return Math.round(match.match_score_raw);
-        }
+      
+      if (!Array.isArray(rawMatches) || rawMatches.length === 0) {
+        return [];
+      }
+      
+      // Dedupe by role_title + firm_name + firm_location combination
+      const uniqueMatches = new Map();
+      
+      rawMatches.forEach(match => {
+        const key = `${match.role_title || ''}-${match.firm_name || ''}-${match.firm_location || ''}`;
         
-        const s = match.match_score || match.score;
-        if (s === null || s === undefined) return 0;
-        if (typeof s === 'number') {
-          if (s <= 1) return Math.round(s * 100); // 0.09 -> 9%
-          return Math.round(s); // 9 -> 9%
-        }
-        const str = String(s).trim();
-        if (/^[0]\.\d+/.test(str)) return Math.round(parseFloat(str) * 100);
-        if (str.endsWith('%')) return Math.round(parseFloat(str.replace('%','')));
-        const n = parseFloat(str);
-        if (!isNaN(n)) {
-          if (n <= 1) return Math.round(n * 100);
-          return Math.round(n);
-        }
-        return 0;
-      };
-
-      const normalized = rawMatches.map((m: any) => {
-        const scoreNum = parseScore(m);
-        return {
-          role_id: m.role_id || m.id || m.role_title,
-          role_title: m.role_title || m.title || 'Untitled Role',
-          description: (m.description || m.role_description || ''),
-          match_score_num: scoreNum,
-          match_score: `${scoreNum}%`,
-          match_score_raw: m.match_score_raw,
-          match_category: m.match_category,
-          match_reason: m.match_reason || m.reason || '',
-          matched_at: m.matched_at || new Date().toISOString(),
-          firm_name: m.firm_name,
-          firm_location: m.firm_location,
-          firm_website: m.firm_website,
-          display_title: m.display_title
-        };
-      });
-
-      // Dedupe by role_id keeping the highest score
-      const map = new Map();
-      normalized.forEach((item: any) => {
-        const key = item.role_id || item.role_title;
-        if (!map.has(key) || item.match_score_num > map.get(key).match_score_num) {
-          map.set(key, item);
+        if (!uniqueMatches.has(key)) {
+          // Ensure all required fields exist with defaults
+          const cleanMatch = {
+            role_title: match.role_title || 'Untitled Role',
+            match_score: match.match_score || '0',
+            match_category: match.match_category || 'General',
+            description: match.description || 'No description available',
+            match_reason: match.match_reason || 'No reason provided',
+            matched_at: match.matched_at || new Date().toISOString(),
+            firm_name: match.firm_name || 'Unknown Company',
+            firm_location: match.firm_location || 'Location not specified',
+            firm_website: match.firm_website || '',
+            display_title: match.display_title || match.role_title || 'Untitled Role'
+          };
+          
+          uniqueMatches.set(key, cleanMatch);
         }
       });
-
-      return Array.from(map.values())
-        .sort((a: any, b: any) => b.match_score_num - a.match_score_num)
+      
+      // Convert back to array, sort by score, and take top 10
+      return Array.from(uniqueMatches.values())
+        .sort((a, b) => {
+          const scoreA = parseFloat(a.match_score) || 0;
+          const scoreB = parseFloat(b.match_score) || 0;
+          return scoreB - scoreA;
+        })
         .slice(0, 10);
+    };
+    
+    // Create normalized input for processing
+    const normalizedInput = { 
+      ...webhookResponse, 
+      all_matches: matchesArray 
     };
     
     // Always display whatever matches are in the response
     try {
-      if (webhookResponse.all_matches && webhookResponse.all_matches.length > 0) {
-        const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
-        const topMatches = normalizeMatches(webhookResponse);
+      if (matchesArray.length > 0) {
+        const totalMatches = webhookResponse.total_matches || matchesArray.length;
+        const topMatches = normalizeMatches(normalizedInput);
         const candidateName = webhookResponse.candidate_name || candidateIdentifier || 'this candidate';
         
         console.log('✅ Setting matches:', { 
@@ -123,7 +123,7 @@ export function SonderApp() {
         
         setMatches(topMatches);
         addMessage(
-          webhookResponse.message || `I found ${totalMatches} matching roles for ${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+          `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`,
           'bot'
         );
       } else {
