@@ -42,29 +42,58 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
 
     console.log('📡 Response status:', response.status, response.statusText);
 
-    // Parse response regardless of status code
-    const data = await response.json();
-    const result = Array.isArray(data) ? data[0] : data;
+    // Get raw text first for debugging
+    const text = await response.text();
+    console.log('📄 Raw response text:', text);
     
-    console.log('📋 Parsed response data:', result);
-    
-    // If we have valid match data, it's a success regardless of HTTP status
-    if (result && result.success && result.all_matches) {
-      console.log('✅ Matching webhook success - valid data structure found');
-      logWebhookCall(ENDPOINTS.matching, request, result);
-      return result;
+    try {
+      // Parse JSON
+      let data = JSON.parse(text);
+      
+      // CRITICAL: Always unwrap array
+      if (Array.isArray(data) && data.length > 0) {
+        data = data[0];
+      }
+      
+      console.log('📋 Parsed response data:', data);
+      
+      // Validate structure - accept if it has all_matches property (even if empty)
+      if (data && typeof data === 'object' && 'all_matches' in data) {
+        console.log('✅ Valid response with', data.total_matches || data.all_matches?.length || 0, 'matches');
+        logWebhookCall(ENDPOINTS.matching, request, data);
+        return data;
+      }
+      
+      // Check for error responses that are still valid
+      if (data && typeof data === 'object' && data.error) {
+        console.log('⚠️ Webhook returned error response:', data.error);
+        logWebhookCall(ENDPOINTS.matching, request, data);
+        return data;
+      }
+      
+      // Unexpected structure but parseable - return empty matches instead of failing
+      console.warn('⚠️ Unexpected response structure, returning empty matches:', data);
+      const fallbackResponse = {
+        success: true,
+        total_matches: 0,
+        all_matches: [],
+        message: 'Could not parse response structure'
+      };
+      logWebhookCall(ENDPOINTS.matching, request, fallbackResponse, true);
+      return fallbackResponse;
+      
+    } catch (parseError) {
+      console.error('💥 JSON parse error:', parseError);
+      // Return empty matches instead of failing completely
+      const fallbackResponse = {
+        success: true,
+        total_matches: 0,
+        all_matches: [],
+        message: 'Could not parse JSON response'
+      };
+      logWebhookCall(ENDPOINTS.matching, request, fallbackResponse, true);
+      return fallbackResponse;
     }
-    
-    // Only treat as error if data is truly invalid
-    if (!result || (!result.all_matches && !result.error)) {
-      console.error('❌ Invalid response structure:', result);
-      throw new Error('Invalid response structure');
-    }
-    
-    // If we get here, we have some data but it might be an error response
-    console.log('⚠️ Webhook returned error response:', result);
-    logWebhookCall(ENDPOINTS.matching, request, result);
-    return result;
     
   } catch (error) {
     console.error('💥 Matching webhook error:', error);
