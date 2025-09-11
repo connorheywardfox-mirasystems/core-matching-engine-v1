@@ -40,6 +40,13 @@ export function SonderApp() {
 
   // Shared function to display matches from webhook response
   const displayMatches = (webhookResponse: any, candidateIdentifier?: string) => {
+    console.log('🔍 displayMatches called with:', { 
+      webhookResponse, 
+      candidateIdentifier,
+      hasAllMatches: !!webhookResponse?.all_matches,
+      matchCount: webhookResponse?.all_matches?.length || 0
+    });
+    
     // Normalize and clean webhook response data
     const normalizeMatches = (rawResp: any) => {
       const rawMatches = rawResp.all_matches || [];
@@ -101,19 +108,34 @@ export function SonderApp() {
     };
     
     // Always display whatever matches are in the response
-    if (webhookResponse.all_matches && webhookResponse.all_matches.length > 0) {
-      const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
-      const topMatches = normalizeMatches(webhookResponse);
-      const candidateName = webhookResponse.candidate_name || candidateIdentifier || 'this candidate';
-      
-      setMatches(topMatches);
-      addMessage(
-        webhookResponse.message || `I found ${totalMatches} matching roles for ${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
-        'bot'
-      );
-    } else {
-      const candidateName = webhookResponse.candidate_name || candidateIdentifier || 'this candidate';
-      addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
+    try {
+      if (webhookResponse.all_matches && webhookResponse.all_matches.length > 0) {
+        const totalMatches = webhookResponse.total_matches || webhookResponse.all_matches.length;
+        const topMatches = normalizeMatches(webhookResponse);
+        const candidateName = webhookResponse.candidate_name || candidateIdentifier || 'this candidate';
+        
+        console.log('✅ Setting matches:', { 
+          totalMatches, 
+          topMatchesCount: topMatches.length, 
+          candidateName,
+          firstMatch: topMatches[0] 
+        });
+        
+        setMatches(topMatches);
+        addMessage(
+          webhookResponse.message || `I found ${totalMatches} matching roles for ${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
+          'bot'
+        );
+      } else {
+        const candidateName = webhookResponse.candidate_name || candidateIdentifier || 'this candidate';
+        console.log('❌ No matches found for:', candidateName);
+        addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
+        setMatches([]);
+      }
+    } catch (error) {
+      console.error('❌ Error in displayMatches:', error, { webhookResponse });
+      const candidateName = candidateIdentifier || 'candidate';
+      addMessage(`Error processing matches for ${candidateName}. Please try again.`, 'bot');
       setMatches([]);
     }
   };
@@ -145,6 +167,7 @@ export function SonderApp() {
       };
 
       const webhookResponse = await callMatchingWebhook(matchingRequest);
+      console.log('📝 Text input webhook response:', webhookResponse);
       
       // Always display whatever matches are in the response
       displayMatches(webhookResponse);
@@ -301,6 +324,7 @@ export function SonderApp() {
             };
 
         const webhookResponse = await callMatchingWebhook(matchingRequest);
+        console.log('📄 File upload webhook response for', file.name, ':', webhookResponse);
         
         // Always display whatever matches are in the response
         displayMatches(webhookResponse, file.name);
