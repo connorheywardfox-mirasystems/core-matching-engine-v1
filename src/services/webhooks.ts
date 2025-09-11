@@ -42,16 +42,30 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
 
     console.log('📡 Response status:', response.status, response.statusText);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Matching webhook failed:', errorText);
-      throw new Error(`Matching webhook failed with status ${response.status}: ${errorText}`);
+    // Parse response regardless of status code
+    const data = await response.json();
+    const result = Array.isArray(data) ? data[0] : data;
+    
+    console.log('📋 Parsed response data:', result);
+    
+    // If we have valid match data, it's a success regardless of HTTP status
+    if (result && result.success && result.all_matches) {
+      console.log('✅ Matching webhook success - valid data structure found');
+      logWebhookCall(ENDPOINTS.matching, request, result);
+      return result;
     }
     
-    const data = await response.json();
-    console.log('✅ Matching webhook success - received response:', data);
-    logWebhookCall(ENDPOINTS.matching, request, data);
-    return data;
+    // Only treat as error if data is truly invalid
+    if (!result || (!result.all_matches && !result.error)) {
+      console.error('❌ Invalid response structure:', result);
+      throw new Error('Invalid response structure');
+    }
+    
+    // If we get here, we have some data but it might be an error response
+    console.log('⚠️ Webhook returned error response:', result);
+    logWebhookCall(ENDPOINTS.matching, request, result);
+    return result;
+    
   } catch (error) {
     console.error('💥 Matching webhook error:', error);
     throw error;
