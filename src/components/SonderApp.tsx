@@ -68,8 +68,7 @@ export function SonderApp() {
       
       // Normalize and clean webhook response data
       const normalizeMatches = (rawResp: any) => {
-        const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
-        const rawMatches = resp.all_matches || [];
+        const rawMatches = rawResp.all_matches || [];
 
         const parseScore = (s: any): number => {
           if (s === null || s === undefined) return 0;
@@ -266,8 +265,7 @@ export function SonderApp() {
     
     // Normalize matches function (extracted to avoid duplication)
     const normalizeMatches = (rawResp: any) => {
-      const resp = Array.isArray(rawResp) ? (rawResp[0] || {}) : (rawResp || {});
-      const rawMatches = resp.all_matches || [];
+      const rawMatches = rawResp.all_matches || [];
 
       const parseScore = (s: any): number => {
         if (s === null || s === undefined) return 0;

@@ -42,58 +42,34 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
 
     console.log('📡 Response status:', response.status, response.statusText);
 
-    // Get raw text first for debugging
-    const text = await response.text();
-    console.log('📄 Raw response text:', text);
+    // Backend now returns consistent object format
+    const data = await response.json();
+    console.log('📋 Parsed response data:', data);
     
-    try {
-      // Parse JSON
-      let data = JSON.parse(text);
-      
-      // CRITICAL: Always unwrap array
-      if (Array.isArray(data) && data.length > 0) {
-        data = data[0];
-      }
-      
-      console.log('📋 Parsed response data:', data);
-      
-      // Validate structure - accept if it has all_matches property (even if empty)
-      if (data && typeof data === 'object' && 'all_matches' in data) {
-        console.log('✅ Valid response with', data.total_matches || data.all_matches?.length || 0, 'matches');
-        logWebhookCall(ENDPOINTS.matching, request, data);
-        return data;
-      }
-      
-      // Check for error responses that are still valid
-      if (data && typeof data === 'object' && data.error) {
-        console.log('⚠️ Webhook returned error response:', data.error);
-        logWebhookCall(ENDPOINTS.matching, request, data);
-        return data;
-      }
-      
-      // Unexpected structure but parseable - return empty matches instead of failing
-      console.warn('⚠️ Unexpected response structure, returning empty matches:', data);
-      const fallbackResponse = {
-        success: true,
-        total_matches: 0,
-        all_matches: [],
-        message: 'Could not parse response structure'
-      };
-      logWebhookCall(ENDPOINTS.matching, request, fallbackResponse, true);
-      return fallbackResponse;
-      
-    } catch (parseError) {
-      console.error('💥 JSON parse error:', parseError);
-      // Return empty matches instead of failing completely
-      const fallbackResponse = {
-        success: true,
-        total_matches: 0,
-        all_matches: [],
-        message: 'Could not parse JSON response'
-      };
-      logWebhookCall(ENDPOINTS.matching, request, fallbackResponse, true);
-      return fallbackResponse;
+    // Validate new consistent object structure
+    if (data && data.success && data.all_matches) {
+      console.log('✅ Valid response with', data.total_matches, 'matches');
+      logWebhookCall(ENDPOINTS.matching, request, data);
+      return data;
     }
+    
+    // Handle no matches case
+    if (data && data.total_matches === 0) {
+      console.log('✅ Valid response with 0 matches');
+      logWebhookCall(ENDPOINTS.matching, request, data);
+      return data;
+    }
+    
+    // Handle error responses
+    if (data && data.error) {
+      console.log('⚠️ Webhook returned error response:', data.error);
+      logWebhookCall(ENDPOINTS.matching, request, data);
+      return data;
+    }
+    
+    // Invalid response structure
+    console.error('❌ Invalid response structure:', data);
+    throw new Error(data?.message || 'Invalid response structure');
     
   } catch (error) {
     console.error('💥 Matching webhook error:', error);
