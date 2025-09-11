@@ -138,11 +138,6 @@ export function SonderApp() {
           webhookResponse.message || `I found ${totalMatches} matching roles${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
           'bot'
         );
-        
-        // Display readable summary if available
-        if (webhookResponse.readable_summary) {
-          addMessage(webhookResponse.readable_summary, 'bot');
-        }
       } else if (webhookResponse.success && webhookResponse.total_matches === 0) {
         const candidateName = webhookResponse.candidate_name || 'this candidate';
         addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
@@ -375,11 +370,6 @@ export function SonderApp() {
             webhookResponse.message || `I found ${totalMatches} matching roles for ${candidateName}! Here are the top ${Math.min(10, topMatches.length)} matches:`,
             'bot'
           );
-          
-          // Display readable summary if available
-          if (webhookResponse.readable_summary) {
-            addMessage(webhookResponse.readable_summary, 'bot');
-          }
         } else if (webhookResponse.success && webhookResponse.total_matches === 0) {
           const candidateName = webhookResponse.candidate_name || file.name;
           addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
