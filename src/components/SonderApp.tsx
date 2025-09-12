@@ -38,34 +38,38 @@ export function SonderApp() {
   // Generate unique message ID
   const generateMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Helper function to get score color based on match score
+  const getScoreColor = (score: string | number) => {
+    const numScore = typeof score === 'string' ? parseFloat(score) : score;
+    if (numScore >= 75) return 'text-green-600';
+    if (numScore >= 60) return 'text-blue-600';
+    return 'text-orange-600';
+  };
+
   // Shared function to display matches from webhook response
   const displayMatches = (webhookResponse: any, candidateIdentifier?: string) => {
     console.log('🔍 displayMatches called with:', { 
-      webhookResponse,
-      candidateIdentifier,
-      hasAllMatches: !!webhookResponse?.all_matches,
-      total_matches: webhookResponse?.total_matches,
       success: webhookResponse?.success,
-      matchCount: Array.isArray(webhookResponse?.all_matches) ? webhookResponse.all_matches.length : 0
+      total_matches: webhookResponse?.total_matches,
+      candidate_name: webhookResponse?.candidate_name,
+      all_matches_count: webhookResponse?.all_matches?.length || 0,
+      message: webhookResponse?.message
     });
-    
-    // Coerce all_matches to array (handles array, object, and JSON string)
-    let rawAllMatches: any = webhookResponse?.all_matches ?? [];
-    if (typeof rawAllMatches === 'string') {
-      try {
-        const parsed = JSON.parse(rawAllMatches);
-        rawAllMatches = parsed;
-      } catch (e) {
-        console.warn('⚠️ Failed to parse all_matches string:', e);
-      }
+
+    // Handle consistent JSON object structure
+    if (!webhookResponse?.success) {
+      console.log('❌ Webhook response indicates failure');
+      const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'candidate';
+      addMessage(`Error processing matches for ${candidateName}.`, 'bot');
+      setMatches([]);
+      return;
     }
-    const matchesArray = Array.isArray(rawAllMatches) 
-      ? rawAllMatches 
-      : (rawAllMatches && typeof rawAllMatches === 'object' ? Object.values(rawAllMatches) : []);
-    
-    console.log('🔄 Coerced matches:', { 
-      originalType: Array.isArray(rawAllMatches) ? 'array' : typeof rawAllMatches,
-      matchesArrayLength: matchesArray.length 
+
+    const matchesArray = webhookResponse?.all_matches || [];
+    console.log('📊 Processing matches:', { 
+      total_matches: webhookResponse?.total_matches,
+      all_matches_length: matchesArray.length,
+      candidate_name: webhookResponse?.candidate_name
     });
     
     // Normalize and clean webhook response data
@@ -111,34 +115,35 @@ export function SonderApp() {
         .slice(0, 10);
     };
     
-    // Create normalized input for processing
-    const normalizedInput = { 
-      ...webhookResponse, 
-      all_matches: matchesArray 
-    };
-    
-    // Always display whatever matches are in the response
+    // Display matches based on webhook response
     try {
       if (matchesArray.length > 0) {
         const totalMatches = webhookResponse?.total_matches ?? matchesArray.length;
-        const topMatches = normalizeMatches(normalizedInput);
+        const topMatches = normalizeMatches({ all_matches: matchesArray });
         const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
         
         console.log('✅ Setting matches:', { 
           totalMatches, 
           topMatchesCount: topMatches.length, 
           candidateName,
-          firstMatch: topMatches[0] 
+          message: webhookResponse?.message
         });
         
         setMatches(topMatches);
-        addMessage(
-          `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`,
-          'bot'
-        );
+        
+        // Use the message from webhook response if available
+        const displayMessage = webhookResponse?.message || 
+          `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`;
+        
+        addMessage(displayMessage, 'bot');
+        
+        // Add readable summary if available
+        if (webhookResponse?.readable_summary) {
+          addMessage(webhookResponse.readable_summary, 'bot');
+        }
       } else {
         const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
-        console.log('❌ No matches found for:', candidateName, { all_matches_present: !!webhookResponse?.all_matches });
+        console.log('❌ No matches found for:', candidateName);
         addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
         setMatches([]);
       }
