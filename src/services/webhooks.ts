@@ -50,6 +50,12 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
       throw new Error('Invalid JSON response');
     }
     
+    // CRITICAL FIX: Response is ALWAYS an array with one object inside
+    // Must unwrap it to get the actual data object
+    if (Array.isArray(data) && data.length > 0) {
+      data = data[0];  // Extract the object from the array
+    }
+    
     console.log('📋 Parsed response data:', data);
     
     // The response is ALWAYS a valid object with matches
