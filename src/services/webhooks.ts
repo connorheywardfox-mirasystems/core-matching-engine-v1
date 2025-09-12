@@ -58,15 +58,9 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
     
     console.log('📋 Parsed response data:', data);
     
-    // The response is ALWAYS a valid object with matches
-    // Don't check anything else - just use it
-    if (data && data.all_matches !== undefined) {
-      console.log('✅ Response with', data.all_matches?.length || 0, 'matches');
-      logWebhookCall(ENDPOINTS.matching, request, data);
-      return data;
-    }
-    
-    throw new Error('Response missing required fields');
+    // Return the unwrapped data regardless of shape; UI will handle normalization
+    logWebhookCall(ENDPOINTS.matching, request, data);
+    return data;
     
   } catch (error) {
     console.error('💥 Matching webhook error:', error);
