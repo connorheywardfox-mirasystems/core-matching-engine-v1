@@ -131,15 +131,11 @@ export function SonderApp() {
         
         setMatches(topMatches);
         
-        // Combine message and summary into one consolidated message
-        let displayMessage = webhookResponse?.message || 
-          `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`;
-        
-        if (webhookResponse?.readable_summary) {
-          displayMessage = `${displayMessage}\n\n${webhookResponse.readable_summary}`;
-        }
-        
-        addMessage(displayMessage, 'bot');
+        // Show only the standardized message format
+        addMessage(
+          `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`,
+          'bot'
+        );
       } else {
         const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
         console.log('❌ No matches found for:', candidateName);
