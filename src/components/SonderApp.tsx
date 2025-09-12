@@ -131,16 +131,15 @@ export function SonderApp() {
         
         setMatches(topMatches);
         
-        // Use the message from webhook response if available
-        const displayMessage = webhookResponse?.message || 
+        // Combine message and summary into one consolidated message
+        let displayMessage = webhookResponse?.message || 
           `Found ${totalMatches} potential roles for ${candidateName} - Showing recommended matches:`;
         
-        addMessage(displayMessage, 'bot');
-        
-        // Add readable summary if available
         if (webhookResponse?.readable_summary) {
-          addMessage(webhookResponse.readable_summary, 'bot');
+          displayMessage = `${displayMessage}\n\n${webhookResponse.readable_summary}`;
         }
+        
+        addMessage(displayMessage, 'bot');
       } else {
         const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
         console.log('❌ No matches found for:', candidateName);
