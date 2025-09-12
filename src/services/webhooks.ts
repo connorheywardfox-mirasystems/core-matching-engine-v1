@@ -40,7 +40,7 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
       body: JSON.stringify(request),
     });
 
-    // Don't check status codes or headers - just parse the response
+    // Parse response as plain object
     let data;
     try {
       const text = await response.text();
@@ -50,15 +50,9 @@ export async function callMatchingWebhook(request: MatchingRequest): Promise<any
       throw new Error('Invalid JSON response');
     }
     
-    // CRITICAL FIX: Response is ALWAYS an array with one object inside
-    // Must unwrap it to get the actual data object
-    if (Array.isArray(data) && data.length > 0) {
-      data = data[0];  // Extract the object from the array
-    }
-    
     console.log('📋 Parsed response data:', data);
     
-    // Return the unwrapped data regardless of shape; UI will handle normalization
+    // Return the data object directly
     logWebhookCall(ENDPOINTS.matching, request, data);
     return data;
     

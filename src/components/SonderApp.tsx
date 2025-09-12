@@ -40,25 +40,17 @@ export function SonderApp() {
 
   // Shared function to display matches from webhook response
   const displayMatches = (webhookResponse: any, candidateIdentifier?: string) => {
-    // Unwrap array-wrapped responses defensively
-    let resp = webhookResponse;
-    if (Array.isArray(resp) && resp.length > 0) {
-      console.log('📦 Unwrapping array response:', resp);
-      resp = resp[0];
-    }
-
     console.log('🔍 displayMatches called with:', { 
-      raw: webhookResponse,
-      unwrapped: resp,
+      webhookResponse,
       candidateIdentifier,
-      hasAllMatches: !!resp?.all_matches,
-      total_matches: resp?.total_matches,
-      success: resp?.success,
-      matchCount: Array.isArray(resp?.all_matches) ? resp.all_matches.length : 0
+      hasAllMatches: !!webhookResponse?.all_matches,
+      total_matches: webhookResponse?.total_matches,
+      success: webhookResponse?.success,
+      matchCount: Array.isArray(webhookResponse?.all_matches) ? webhookResponse.all_matches.length : 0
     });
     
     // Coerce all_matches to array (handles array, object, and JSON string)
-    let rawAllMatches: any = resp?.all_matches ?? [];
+    let rawAllMatches: any = webhookResponse?.all_matches ?? [];
     if (typeof rawAllMatches === 'string') {
       try {
         const parsed = JSON.parse(rawAllMatches);
@@ -121,16 +113,16 @@ export function SonderApp() {
     
     // Create normalized input for processing
     const normalizedInput = { 
-      ...resp, 
+      ...webhookResponse, 
       all_matches: matchesArray 
     };
     
     // Always display whatever matches are in the response
     try {
       if (matchesArray.length > 0) {
-        const totalMatches = resp?.total_matches ?? matchesArray.length;
+        const totalMatches = webhookResponse?.total_matches ?? matchesArray.length;
         const topMatches = normalizeMatches(normalizedInput);
-        const candidateName = resp?.candidate_name || candidateIdentifier || 'this candidate';
+        const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
         
         console.log('✅ Setting matches:', { 
           totalMatches, 
@@ -145,13 +137,13 @@ export function SonderApp() {
           'bot'
         );
       } else {
-        const candidateName = resp?.candidate_name || candidateIdentifier || 'this candidate';
-        console.log('❌ No matches found for:', candidateName, { all_matches_present: !!resp?.all_matches });
+        const candidateName = webhookResponse?.candidate_name || candidateIdentifier || 'this candidate';
+        console.log('❌ No matches found for:', candidateName, { all_matches_present: !!webhookResponse?.all_matches });
         addMessage(`No suitable matches found for ${candidateName}.`, 'bot');
         setMatches([]);
       }
     } catch (error) {
-      console.error('❌ Error in displayMatches:', error, { resp });
+      console.error('❌ Error in displayMatches:', error, { webhookResponse });
       const candidateName = candidateIdentifier || 'candidate';
       addMessage(`Error processing matches for ${candidateName}. Please try again.`, 'bot');
       setMatches([]);
