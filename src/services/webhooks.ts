@@ -162,11 +162,17 @@ export async function callPitchGeneratorWebhook(request: PitchRequest): Promise<
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
     const rawData = await response.json();
+    console.log('🔍 Raw webhook response:', rawData);
+    console.log('🔍 Is array?', Array.isArray(rawData));
+    console.log('🔍 Pitches in raw:', rawData?.pitches || rawData?.[0]?.pitches);
     
     // Normalize response: unwrap array if needed
     const data = Array.isArray(rawData) 
       ? rawData[0] 
       : (Array.isArray(rawData?.data) ? rawData.data[0] : rawData);
+    
+    console.log('🔍 After normalization:', data);
+    console.log('🔍 Pitches after normalization:', data?.pitches);
     
     // Ensure success field exists
     const normalized = {
