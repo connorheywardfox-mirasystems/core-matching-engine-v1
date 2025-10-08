@@ -1,4 +1,5 @@
 export interface Match {
+  role_id?: string;
   role_title: string;
   match_score: string;
   match_category?: string;
@@ -60,4 +61,33 @@ export interface ChatMessage {
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
+  pitchData?: {
+    formattedText: string;
+    pitches: Pitch[];
+    matchId: string;
+  };
+}
+
+export interface PitchRequest {
+  match_id: string;
+  pitch_type: "all" | "email" | "linkedin" | "phone";
+}
+
+export interface Pitch {
+  type: "pitch_email" | "pitch_linkedin" | "pitch_phone";
+  content: string;
+  quality_score: number;
+  status: "pending_review" | "draft" | "approved";
+}
+
+export interface PitchResponse {
+  success: boolean;
+  formatted_text: string;
+  generated: number;
+  pitches: Pitch[];
+  context: {
+    firm: string;
+    role: string;
+  };
+  suggested_actions: string[];
 }

@@ -2,13 +2,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Match } from "@/types";
-import { X, Send, Bookmark, Building } from "lucide-react";
+import { X, Sparkles, Bookmark, Building } from "lucide-react";
 
 interface MatchDetailModalProps {
   match: Match | null;
   isOpen: boolean;
   onClose: () => void;
-  onSendIntro: (match: Match) => void;
+  onCreatePitch: (match: Match) => void;
   onSave: (match: Match) => void;
 }
 
@@ -16,7 +16,7 @@ export function MatchDetailModal({
   match,
   isOpen,
   onClose,
-  onSendIntro,
+  onCreatePitch,
   onSave
 }: MatchDetailModalProps) {
   if (!match) return null;
@@ -113,11 +113,11 @@ export function MatchDetailModal({
           <div className="flex gap-3 pt-4 border-t border-border">
             <Button 
               variant="primary" 
-              onClick={() => onSendIntro(match)}
+              onClick={() => onCreatePitch(match)}
               className="flex-1"
             >
-              <Send className="w-4 h-4" />
-              Send Introduction
+              <Sparkles className="w-4 h-4" />
+              Create Pitches
             </Button>
             <Button 
               variant="secondary" 

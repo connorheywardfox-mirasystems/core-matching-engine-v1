@@ -11,7 +11,8 @@ import {
   callMatchingWebhook, 
   callSaveMemoryWebhook, 
   callSendIntroWebhook,
-  callMatchDetailWebhook 
+  callMatchDetailWebhook,
+  callPitchGeneratorWebhook
 } from "@/services/webhooks";
 import { generateMatchesPDF } from "@/lib/pdfGenerator";
 
@@ -34,6 +35,7 @@ export function SonderApp() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isSaveMemoryLoading, setIsSaveMemoryLoading] = useState(false);
+  const [isPitchLoading, setIsPitchLoading] = useState(false);
 
   // Generate unique message ID
   const generateMessageId = () => `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -273,11 +275,128 @@ export function SonderApp() {
     }
   };
 
+  // Handle create pitch
+  const handleCreatePitch = async (match: Match) => {
+    if (!match.role_id) {
+      toast({
+        title: "Error",
+        description: "Match ID is required to generate pitches.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPitchLoading(true);
+    
+    // Add loading message to chat
+    const loadingMsg: ChatMessage = {
+      id: generateMessageId(),
+      type: 'bot',
+      content: 'Generating pitches... ⏳',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, loadingMsg]);
+    
+    // Close the modal
+    setIsDetailModalOpen(false);
+
+    try {
+      const pitchRequest = {
+        match_id: match.role_id,
+        pitch_type: "all" as const
+      };
+
+      const response = await callPitchGeneratorWebhook(pitchRequest);
+      
+      if (response.success) {
+        // Remove loading message and add pitch message
+        setMessages(prev => {
+          const withoutLoading = prev.filter(m => m.id !== loadingMsg.id);
+          return [
+            ...withoutLoading,
+            {
+              id: generateMessageId(),
+              type: 'bot',
+              content: response.formatted_text,
+              timestamp: new Date(),
+              pitchData: {
+                formattedText: response.formatted_text,
+                pitches: response.pitches,
+                matchId: match.role_id!
+              }
+            }
+          ];
+        });
+
+        toast({
+          title: "Pitches generated",
+          description: `Generated ${response.generated} pitch variations successfully.`,
+        });
+      } else {
+        // Remove loading and show error
+        setMessages(prev => {
+          const withoutLoading = prev.filter(m => m.id !== loadingMsg.id);
+          return [
+            ...withoutLoading,
+            {
+              id: generateMessageId(),
+              type: 'bot',
+              content: 'Failed to generate pitches. Please try again.',
+              timestamp: new Date()
+            }
+          ];
+        });
+      }
+    } catch (error) {
+      console.error('Error generating pitches:', error);
+      
+      // Remove loading and show error
+      setMessages(prev => {
+        const withoutLoading = prev.filter(m => m.id !== loadingMsg.id);
+        return [
+          ...withoutLoading,
+          {
+            id: generateMessageId(),
+            type: 'bot',
+            content: 'Failed to generate pitches. Please try again.',
+            timestamp: new Date()
+          }
+        ];
+      });
+
+      toast({
+        title: "Error",
+        description: "Failed to generate pitches. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPitchLoading(false);
+    }
+  };
+
+  const handleCopyPitch = (pitchType: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    
+    const pitchTypeLabel = pitchType.charAt(0).toUpperCase() + pitchType.slice(1);
+    toast({
+      title: "Copied to clipboard!",
+      description: `${pitchTypeLabel} pitch copied successfully.`,
+    });
+  };
+
+  const handleRegeneratePitch = (matchId: string) => {
+    // Find the match and trigger pitch generation again
+    const match = matches.find(m => m.role_id === matchId);
+    if (match) {
+      handleCreatePitch(match);
+    }
+  };
+
   // Quick actions
-  const handleCreatePitch = () => {
+  const handleQuickCreatePitch = () => {
     toast({
       title: "Create pitch",
-      description: "Pitch creation feature coming soon.",
+      description: "Please select a match first to create pitches.",
     });
   };
 
@@ -382,7 +501,7 @@ export function SonderApp() {
         demoUser={demoUser}
         onDemoUserChange={setDemoUser}
         onActiveRoleChange={setActiveRole}
-        onCreatePitch={handleCreatePitch}
+        onCreatePitch={handleQuickCreatePitch}
         onSaveMemory={handleQuickSaveMemory}
         onImportCandidates={handleImportCandidates}
       />
@@ -394,6 +513,8 @@ export function SonderApp() {
         onCandidateTextChange={setCandidateText}
         onFindMatches={handleFindMatches}
         isLoading={isLoading}
+        onCopyPitch={handleCopyPitch}
+        onRegeneratePitch={handleRegeneratePitch}
       />
 
       {/* Matches Panel */}
@@ -411,7 +532,7 @@ export function SonderApp() {
         match={selectedMatch}
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
-        onSendIntro={handleSendIntro}
+        onCreatePitch={handleCreatePitch}
         onSave={handleSaveMatch}
       />
 

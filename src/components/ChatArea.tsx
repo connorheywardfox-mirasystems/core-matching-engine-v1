@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/types";
 import { Send, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PitchDisplay } from "./PitchDisplay";
 
 interface ChatAreaProps {
   messages: ChatMessage[];
@@ -11,6 +12,8 @@ interface ChatAreaProps {
   onCandidateTextChange: (text: string) => void;
   onFindMatches: () => void;
   isLoading: boolean;
+  onCopyPitch?: (pitchType: string, content: string) => void;
+  onRegeneratePitch?: (matchId: string) => void;
 }
 
 export function ChatArea({
@@ -18,7 +21,9 @@ export function ChatArea({
   candidateText,
   onCandidateTextChange,
   onFindMatches,
-  isLoading
+  isLoading,
+  onCopyPitch,
+  onRegeneratePitch
 }: ChatAreaProps) {
   return (
     <div className="flex-1 flex flex-col bg-background">
@@ -62,7 +67,18 @@ export function ChatArea({
                   : "bg-muted text-muted-foreground"
               )}
             >
-              <p className="text-sm">{message.content}</p>
+              {message.pitchData ? (
+                <div className="space-y-2">
+                  <PitchDisplay
+                    formattedText={message.pitchData.formattedText}
+                    pitches={message.pitchData.pitches}
+                    onCopy={(type, content) => onCopyPitch?.(type, content)}
+                    onRegenerate={() => onRegeneratePitch?.(message.pitchData!.matchId)}
+                  />
+                </div>
+              ) : (
+                <p className="text-sm">{message.content}</p>
+              )}
               <p className="text-xs mt-2 opacity-70">
                 {message.timestamp.toLocaleTimeString()}
               </p>

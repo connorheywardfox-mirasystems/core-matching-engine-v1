@@ -6,7 +6,9 @@ import {
   SendIntroRequest,
   SendIntroResponse,
   MatchDetailRequest,
-  MatchDetailResponse
+  MatchDetailResponse,
+  PitchRequest,
+  PitchResponse
 } from '@/types';
 import { mockMatches, simulateNetworkDelay } from './mockData';
 
@@ -15,7 +17,8 @@ const ENDPOINTS = {
   matching: 'https://connorheywardfox.app.n8n.cloud/webhook/a12eaced-e46c-447c-af6c-b7a93c3c1428',
   memory: `https://connorheywardfox.app.n8n.cloud/webhook/memory-ingest`,
   sendIntro: `https://connorheywardfox.app.n8n.cloud/webhook/send-intro`,
-  matchDetail: `https://connorheywardfox.app.n8n.cloud/webhook/match-detail`
+  matchDetail: `https://connorheywardfox.app.n8n.cloud/webhook/match-detail`,
+  pitchGenerator: 'https://connorheywardfox.app.n8n.cloud/webhook/pitch-generator'
 };
 
 // Console logger for debugging
@@ -142,6 +145,27 @@ export async function callMatchDetailWebhook(request: MatchDetailRequest): Promi
     return data;
   } catch (error) {
     console.warn('Match detail webhook failed:', error);
+    throw error;
+  }
+}
+
+export async function callPitchGeneratorWebhook(request: PitchRequest): Promise<PitchResponse> {
+  try {
+    const response = await fetch(ENDPOINTS.pitchGenerator, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const data = await response.json();
+    logWebhookCall(ENDPOINTS.pitchGenerator, request, data);
+    return data;
+  } catch (error) {
+    console.warn('Pitch generator webhook failed:', error);
     throw error;
   }
 }
