@@ -86,11 +86,14 @@ export function SonderApp() {
       const uniqueMatches = new Map();
       
       rawMatches.forEach(match => {
-        const key = `${match.role_title || ''}-${match.firm_name || ''}-${match.firm_location || ''}`;
+        // Use role_id for deduplication if available
+        const roleId = match.role_id ?? match.match_id ?? match.id;
+        const key = roleId || `${match.role_title || ''}-${match.firm_name || ''}-${match.firm_location || ''}`;
         
         if (!uniqueMatches.has(key)) {
           // Ensure all required fields exist with defaults
           const cleanMatch = {
+            role_id: roleId, // Preserve role_id
             role_title: match.role_title || 'Untitled Role',
             match_score: match.match_score || '0',
             match_category: match.match_category || 'General',
@@ -103,6 +106,7 @@ export function SonderApp() {
             display_title: match.display_title || match.role_title || 'Untitled Role'
           };
           
+          console.log('🔑 Normalized match with role_id:', cleanMatch.role_id, 'for role:', cleanMatch.role_title);
           uniqueMatches.set(key, cleanMatch);
         }
       });
@@ -197,16 +201,21 @@ export function SonderApp() {
 
   // Handle view match
   const handleViewMatch = async (match: Match) => {
+    console.log('🔍 Viewing match with role_id:', match.role_id);
     try {
       const detailRequest = { role_id: match.role_id };
       const detailResponse = await callMatchDetailWebhook(detailRequest);
       
-      // Update match with detailed info and preserve role_id
-      setSelectedMatch({ ...match, ...detailResponse, role_id: match.role_id });
+      // Preserve role_id from the original match
+      const roleId = match.role_id ?? detailResponse.role_id;
+      const enrichedMatch = { ...match, ...detailResponse, role_id: roleId };
+      console.log('✅ Setting selectedMatch with role_id:', enrichedMatch.role_id);
+      setSelectedMatch(enrichedMatch);
       setIsDetailModalOpen(true);
     } catch (error) {
       console.error('Error fetching match details:', error);
       // Fallback to basic match info
+      console.log('⚠️ Fallback - using original match with role_id:', match.role_id);
       setSelectedMatch(match);
       setIsDetailModalOpen(true);
     }
