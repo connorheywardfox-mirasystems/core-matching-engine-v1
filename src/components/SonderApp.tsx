@@ -330,8 +330,9 @@ export function SonderApp() {
               timestamp: new Date(),
               pitchData: {
                 formattedText: response.formatted_text,
-                pitches: response.pitches,
-                matchId: match.role_id!
+                pitches: response.pitches || [],
+                matchId: match.role_id!,
+                suggestedActions: response.suggested_actions || []
               }
             }
           ];

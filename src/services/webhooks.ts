@@ -161,9 +161,21 @@ export async function callPitchGeneratorWebhook(request: PitchRequest): Promise<
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
-    const data = await response.json();
-    logWebhookCall(ENDPOINTS.pitchGenerator, request, data);
-    return data;
+    const rawData = await response.json();
+    
+    // Normalize response: unwrap array if needed
+    const data = Array.isArray(rawData) 
+      ? rawData[0] 
+      : (Array.isArray(rawData?.data) ? rawData.data[0] : rawData);
+    
+    // Ensure success field exists
+    const normalized = {
+      success: data?.success ?? true,
+      ...data
+    };
+    
+    logWebhookCall(ENDPOINTS.pitchGenerator, request, normalized);
+    return normalized;
   } catch (error) {
     console.warn('Pitch generator webhook failed:', error);
     throw error;

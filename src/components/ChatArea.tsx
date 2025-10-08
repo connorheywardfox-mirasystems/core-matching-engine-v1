@@ -72,6 +72,7 @@ export function ChatArea({
                   <PitchDisplay
                     formattedText={message.pitchData.formattedText}
                     pitches={message.pitchData.pitches}
+                    suggestedActions={message.pitchData.suggestedActions}
                     onCopy={(type, content) => onCopyPitch?.(type, content)}
                     onRegenerate={() => onRegeneratePitch?.(message.pitchData!.matchId)}
                   />

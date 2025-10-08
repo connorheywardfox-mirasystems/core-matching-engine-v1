@@ -65,6 +65,7 @@ export interface ChatMessage {
     formattedText: string;
     pitches: Pitch[];
     matchId: string;
+    suggestedActions?: string[];
   };
 }
 
