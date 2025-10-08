@@ -65,7 +65,7 @@ export interface ChatMessage {
     formattedText: string;
     pitches: Pitch[];
     matchId: string;
-    suggestedActions?: string[];
+    suggestedActions?: SuggestedAction[];
   };
 }
 
@@ -81,6 +81,12 @@ export interface Pitch {
   status: "pending_review" | "draft" | "approved";
 }
 
+export interface SuggestedAction {
+  label: string;
+  action: string;
+  pitch_type?: string;
+}
+
 export interface PitchResponse {
   success: boolean;
   formatted_text: string;
@@ -90,5 +96,5 @@ export interface PitchResponse {
     firm: string;
     role: string;
   };
-  suggested_actions: string[];
+  suggested_actions: SuggestedAction[];
 }

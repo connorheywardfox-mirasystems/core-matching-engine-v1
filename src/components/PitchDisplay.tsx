@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Copy, RefreshCw, ClipboardCheck, Mail, Linkedin, Phone } from "lucide-react";
 import { useState } from "react";
-import { Pitch } from "@/types";
+import { Pitch, SuggestedAction } from "@/types";
 
 interface PitchDisplayProps {
   formattedText: string;
   pitches: Pitch[];
-  suggestedActions?: string[];
+  suggestedActions?: SuggestedAction[];
   onCopy: (pitchType: string, content: string) => void;
   onRegenerate: () => void;
 }
@@ -131,7 +131,7 @@ export function PitchDisplay({ pitches, suggestedActions, onCopy, onRegenerate }
             size="sm"
             disabled
           >
-            {action}
+            {action.label}
           </Button>
         ))}
         
