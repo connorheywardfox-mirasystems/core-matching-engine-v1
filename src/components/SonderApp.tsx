@@ -198,11 +198,11 @@ export function SonderApp() {
   // Handle view match
   const handleViewMatch = async (match: Match) => {
     try {
-      const detailRequest = { role_id: match.role_title };
+      const detailRequest = { role_id: match.role_id };
       const detailResponse = await callMatchDetailWebhook(detailRequest);
       
-      // Update match with detailed info
-      setSelectedMatch({ ...match, ...detailResponse });
+      // Update match with detailed info and preserve role_id
+      setSelectedMatch({ ...match, ...detailResponse, role_id: match.role_id });
       setIsDetailModalOpen(true);
     } catch (error) {
       console.error('Error fetching match details:', error);
